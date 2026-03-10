@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { type PlacePrediction, type PlacesHookOptions, type PlaceDetails } from '../types';
+import { type PlacePrediction, type PlacesHookOptions, type PlaceDetails, type UsePlacesAutocompleteReturn } from '../types';
 import { fetchLegacyAutocomplete, fetchLegacyDetails } from '../api/placesLegacyApi';
 import { fetchNewAutocomplete, fetchNewDetails } from '../api/placesNewApi';
 import { useDebounce } from '../utils/debounce';
 import { generateSessionToken } from '../utils/sessionToken';
 import { Cache } from '../utils/cache';
 
-export const usePlacesAutocomplete = (options: PlacesHookOptions) => {
+export const usePlacesAutocomplete = (options: PlacesHookOptions):UsePlacesAutocompleteReturn => {
   const { 
     apiKey, isNewPlaces = false, debounce = 400, minLength = 2, enableCache = true,
     onLoaderStart, onLoaderEnd, onDataLoaded, onListLengthChange, onError

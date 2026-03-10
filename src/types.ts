@@ -1,5 +1,8 @@
 import { type StyleProp, type ViewStyle, type TextStyle, type FlatListProps } from 'react-native';
 
+
+export type SetQueryProp = React.Dispatch<React.SetStateAction<string>>;
+
 export interface PlacePrediction {
   placeId: string;
   description: string;
@@ -89,4 +92,15 @@ export interface PlacesComponentProps extends PlacesHookOptions {
   
   // Absolute Escape Hatch: Pass ANY FlatList prop natively
   flatListProps?: Omit<Partial<FlatListProps<PlacePrediction>>, 'data' | 'renderItem'>;
+}
+
+export interface UsePlacesAutocompleteReturn {
+  query: string;
+  setQuery: SetQueryProp
+  results: PlacePrediction[];
+  loading: boolean;
+  error: string | null;
+  fetchPlaceDetails: (placeId: string) => Promise<PlaceDetails>;
+  clearResults: () => void;
+  resetSession: () => void;
 }
