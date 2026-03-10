@@ -5,10 +5,6 @@ A highly optimized, dependency-free, and infinitely customizable React Native li
 
 Built for enterprise applications, this package supports both the **Legacy** and **New** Google Places APIs. It is fully type-safe, guarantees absolutely **zero data loss** (by passing 100% of raw Google API responses), and features extreme UI customization including unrestricted `FlatList` overrides.
 
-[![npm version](https://img.shields.io/npm/v/react-native-smart-gplaces.svg)](https://npmjs.com/package/react-native-smart-gplaces)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-
 ---
 
 ## ✨ Features
