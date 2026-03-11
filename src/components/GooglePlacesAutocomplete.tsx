@@ -3,6 +3,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useRef,
+  useEffect,
 } from 'react';
 import {
   View,
@@ -40,7 +41,6 @@ export const GooglePlacesAutocomplete = forwardRef<
     listItemStyle,
     listItemTextStyle,
 
-    // Custom render props
     renderInput,
     renderItem,
     renderInputLoader,
@@ -55,12 +55,12 @@ export const GooglePlacesAutocomplete = forwardRef<
     keyboardShouldPersistTaps = 'handled',
     minLength = 2,
     renderListInitially = false,
-    listMode = 'floating',
+    listMode = 'flat',
     loaderPlacement = 'input',
 
-    // 🔥 New Configuration Props
     showClearButton = true,
     setQueryOnSelect = true,
+    blurOnSelect = true, // 🔥 Defaults to true for UX
     showLoaderDuringDetailsFetch = true,
 
     inputLoaderSize = 'small',
@@ -83,6 +83,13 @@ export const GooglePlacesAutocomplete = forwardRef<
   const [listVisible, setListVisible] = useState(!!renderListInitially);
 
   const textInputRef = useRef<React.ElementRef<typeof TextInput>>(null);
+  const blurTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeout.current) clearTimeout(blurTimeout.current);
+    };
+  }, []);
 
   useImperativeHandle(ref, () => ({
     getSessionToken: () => getSessionToken(),
@@ -118,11 +125,23 @@ export const GooglePlacesAutocomplete = forwardRef<
   };
 
   const handleFocus = (e: TextInputFocusEvent) => {
+    if (blurTimeout.current) clearTimeout(blurTimeout.current);
     setListVisible(true);
     if (textInputProps?.onFocus) textInputProps.onFocus(e);
   };
 
+  const handleBlur = (e: TextInputFocusEvent) => {
+    if (!keepResultsAfterBlur) {
+      blurTimeout.current = setTimeout(() => {
+        setListVisible(false);
+        clearResults();
+      }, 150);
+    }
+    if (textInputProps?.onBlur) textInputProps.onBlur(e);
+  };
+
   const handleClear = () => {
+    if (blurTimeout.current) clearTimeout(blurTimeout.current);
     setQuery('');
     clearResults();
     if (!renderListInitially) {
@@ -132,13 +151,22 @@ export const GooglePlacesAutocomplete = forwardRef<
   };
 
   const handleSelect = async (item: PlacePrediction) => {
+    if (blurTimeout.current) clearTimeout(blurTimeout.current);
+
     if (setQueryOnSelect) {
       setQuery(item.description);
     }
 
-    setListVisible(false);
+    // 🔥 FIX: We now explicitly respect keepResultsAfterBlur upon Selection!
+    if (!keepResultsAfterBlur && blurOnSelect) {
+      setListVisible(false);
+      clearResults();
+    }
 
-    if (!keepResultsAfterBlur) clearResults();
+    // 🔥 FIX: We blur the input based on the new blurOnSelect prop
+    if (blurOnSelect) {
+      textInputRef.current?.blur();
+    }
 
     if (fetchDetails && onPlaceSelected) {
       try {
@@ -178,7 +206,6 @@ export const GooglePlacesAutocomplete = forwardRef<
   const showList =
     listVisible && (query.length >= minLength || renderListInitially);
 
-  // Logic mapping for Loader visibility
   const isSearchLoadingInput =
     loading && (loaderPlacement === 'input' || loaderPlacement === 'both');
   const isDetailsLoadingInput = fetchingDetails && showLoaderDuringDetailsFetch;
@@ -187,7 +214,6 @@ export const GooglePlacesAutocomplete = forwardRef<
   const showListLoaderUI =
     loading && (loaderPlacement === 'list' || loaderPlacement === 'both');
 
-  // Clear button is visible if enabled by prop, input loader is hidden, and there's text to clear
   const shouldShowClearButton =
     showClearButton && !showInputLoaderUI && query.length > 0;
 
@@ -212,6 +238,7 @@ export const GooglePlacesAutocomplete = forwardRef<
             value: query,
             onChangeText: handleTextChange,
             onFocus: handleFocus,
+            onBlur: handleBlur,
             onClear: handleClear,
           })
         ) : (
@@ -224,6 +251,7 @@ export const GooglePlacesAutocomplete = forwardRef<
             value={query}
             onChangeText={handleTextChange}
             onFocus={handleFocus}
+            onBlur={handleBlur}
           />
         )}
 

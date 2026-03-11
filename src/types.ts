@@ -149,6 +149,8 @@ export interface RenderInputProps {
   onChangeText: (text: string) => void;
   /** Function to trigger the list visibility on focus. */
   onFocus: (e: TextInputFocusEvent) => void;
+  /** Function to handle input blur events and hide the list. */
+  onBlur: (e: TextInputFocusEvent) => void;
   /** Function to completely clear the input and the results. */
   onClear: () => void;
 }
@@ -179,6 +181,8 @@ export interface PlacesComponentProps extends PlacesHookOptions {
   showClearButton?: boolean;
   /** If true, automatically updates the text input with the selected place's description upon selection. Default is true. */
   setQueryOnSelect?: boolean;
+  /** If true, automatically removes focus and dismisses the keyboard after a place is selected. Default is true. */
+  blurOnSelect?: boolean;
   /** If true, automatically shows the input loader while `fetchDetails` is running. Default is true. */
   showLoaderDuringDetailsFetch?: boolean;
 
@@ -188,7 +192,7 @@ export interface PlacesComponentProps extends PlacesHookOptions {
     prediction: PlacePrediction
   ) => void;
 
-  /** If true, the prediction results list will remain visible on screen even after an item is selected. */
+  /** If true, the prediction results list will remain visible on screen even after an item is selected or input is blurred. */
   keepResultsAfterBlur?: boolean;
   /** Determines when the keyboard should close when tapping on the prediction list. Default is 'handled'. */
   keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
