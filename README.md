@@ -1,20 +1,19 @@
-
 # React Native Smart Places 🌍
 
-A highly optimized, dependency-free, and infinitely customizable React Native library for the **Google Places API**.
+An enterprise-grade, dependency-free, perfectly typed, and fully customizable React Native component for the **Google Places API**.
 
-Built for enterprise applications, this package supports both the **Legacy** and **New** Google Places APIs. It is fully type-safe, guarantees absolutely **zero data loss** (by passing 100% of raw Google API responses), and features extreme UI customization including unrestricted `FlatList` overrides.
+[![npm version](https://img.shields.io/npm/v/react-native-smart-gplaces.svg)](https://npmjs.com/package/react-native-smart-gplaces)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
----
+## ✨ Why this library?
 
-## ✨ Features
-
-- 🚀 **Dual API Support**: Seamlessly toggle between Google's Legacy API and the modern New Places API via a single boolean flag (`isNewPlaces`).
-- 💰 **Cost Optimized**: Automatically handles Input Debouncing, UUID Session Tokens, API Field Masking, and Request Cancellation (`AbortController`) to drastically reduce your Google Cloud billing.
-- 🗃️ **Zero Data Loss Guarantee**: Standardized fields (`latitude`, `longitude`, `address`) are mapped for convenience, but the `originalData` object contains the exact, unadulterated JSON payload from Google. You will never miss an undocumented or newly released field.
-- 🎨 **Absolute UI Domination**: Don't like the default UI? Override `renderInput`, `renderItem`, or pass native React Native FlatList props directly using the `flatListProps` escape hatch.
-- 🧠 **Headless Architecture**: Includes a powerful `usePlacesAutocomplete` hook if you prefer to build your own UI entirely from scratch.
-- ⚡ **Zero Dependencies**: Built strictly with React and React Native primitives.
+- **Dual API Support**: Works natively with both Google's Legacy API and the New Places API (v1).
+- **Cost Optimized**: Automatically handles UUID Session Tokens, Input Debouncing, Memory Caching, and Request Cancellations (`AbortController`) to drastically reduce your Google Cloud billing.
+- **Crash-Proof & Zero Data Loss**: Built with meticulous try-catch blocks. Guaranteed access to `originalData` containing the unadulterated Google API JSON. You will never miss an undocumented field.
+- **Expo Web Ready**: Includes `autocompleteProxyUrl` and `detailsProxyUrl` props to easily bypass strict CORS browser restrictions on Web.
+- **Bulletproof UI Layout**: Flexbox layouts guarantee the loading spinner and text *never* overlap. Safely delegate touch events inside custom `renderItem` methods.
+- **Absolute Customization**: Turn off default styles with `disableDefaultStyles={true}`, provide your own `renderItem`, or gain unrestricted access to `<TextInput />` and `<FlatList />` props natively.
 
 ---
 
@@ -28,123 +27,34 @@ yarn add react-native-smart-gplaces
 
 ---
 
-## 💻 Quick Start & Examples
+## 💻 Quick Start
 
-### 1. Basic Usage (Built-in UI)
-The easiest way to get an optimized search bar up and running.
+The easiest way to get an optimized search bar up and running:
 
 ```tsx
-import React from 'react';
-import { View } from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-smart-gplaces';
+import React, { useRef } from 'react';
+import { View, Button } from 'react-native';
+import { GooglePlacesAutocomplete, GooglePlacesAutocompleteRef } from 'react-native-smart-gplaces';
 
 export default function App() {
+  const searchRef = useRef<GooglePlacesAutocompleteRef>(null);
+
   return (
-    <View style={{ flex: 1, padding: 20 }}>
+    <View style={{ flex: 1, padding: 20, marginTop: 50 }}>
       <GooglePlacesAutocomplete
+        ref={searchRef}
         apiKey="YOUR_GOOGLE_API_KEY"
-        isNewPlaces={true} // Uses the modern Google Places API v1
-        fetchDetails={true}
-        placeholder="Search for a restaurant..."
+        isNewPlaces={true} // Use New API v1
+        fetchDetails={true} // Automatically get latitude/longitude on tap
+        listMode="floating" // Renders as an absolute dropdown
+        loaderPlacement="both" // Show loader in the input AND list
         onPlaceSelected={(details, prediction) => {
-          console.log('Selected Place Name:', details?.name);
           console.log('Coordinates:', details?.latitude, details?.longitude);
+          console.log('Raw Google Payload:', details?.originalData);
         }}
       />
-    </View>
-  );
-}
-```
-
-### 2. Advanced Customization & Enterprise Setup
-Use dynamic field masking to save money, listen to lifecycle events, and totally dominate the `FlatList` layout.
-
-```tsx
-import React from 'react';
-import { View, Text } from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-smart-gplaces';
-
-export default function AdvancedApp() {
-  return (
-    <GooglePlacesAutocomplete
-      apiKey="YOUR_GOOGLE_API_KEY"
-      isNewPlaces={true}
-      fetchDetails={true}
-      debounce={400}
       
-      // 💰 Save money: Request only the data you need!
-      detailsFields={['id', 'displayName', 'location', 'servesVegetarianFood', 'priceLevel']}
-      
-      // Automatically maps to `includedPrimaryTypes` (New API) or `types` (Legacy API)
-      types={['restaurant', 'cafe']} 
-
-      // ⏱️ Lifecycle Hooks
-      onLoaderStart={() => console.log('Fetching from Google...')}
-      onDataLoaded={(data) => console.log(`Found ${data.length} results!`)}
-      
-      onPlaceSelected={(details, prediction) => {
-        // Access mapped fields easily
-        console.log('Lat/Lng:', details?.latitude, details?.longitude);
-        
-        // 🗃️ GUARANTEE: Never lose undocumented Google Data
-        console.log('Raw Data:', details?.originalData.servesVegetarianFood); 
-      }}
-
-      // 🎨 Complete Layout & FlatList Control
-      listStyle={{ backgroundColor: '#1E1E1E' }}
-      listItemTextStyle={{ color: 'white' }}
-      
-      // 🔥 The Ultimate Escape Hatch: Pass ANY native FlatList prop!
-      flatListProps={{
-        showsVerticalScrollIndicator: false,
-        initialNumToRender: 10,
-        keyboardDismissMode: 'on-drag',
-        ListHeaderComponent: <Text style={{ color: 'gray' }}>Results</Text>,
-      }}
-    />
-  );
-}
-```
-
-### 3. Headless Hook (Build Your Own UI)
-For complete architectural freedom, bypass our UI components entirely and use the core engine.
-
-```tsx
-import React from 'react';
-import { TextInput, FlatList, TouchableOpacity, Text, View } from 'react-native';
-import { usePlacesAutocomplete } from 'react-native-smart-gplaces';
-
-export default function HeadlessApp() {
-  const { query, setQuery, results, loading, fetchPlaceDetails } = usePlacesAutocomplete({
-    apiKey: 'YOUR_GOOGLE_API_KEY',
-    isNewPlaces: true,
-    debounce: 300,
-    detailsFields:['id', 'location']
-  });
-
-  const handlePress = async (placeId: string) => {
-    const details = await fetchPlaceDetails(placeId);
-    console.log('Details fetched:', details.latitude, details.longitude);
-  };
-
-  return (
-    <View style={{ flex: 1, paddingTop: 50 }}>
-      <TextInput 
-        value={query} 
-        onChangeText={setQuery} 
-        placeholder="Where to?" 
-        style={{ borderWidth: 1, padding: 10 }}
-      />
-      {loading && <Text>Loading...</Text>}
-      <FlatList
-        data={results}
-        keyExtractor={(item) => item.placeId}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handlePress(item.placeId)} style={{ padding: 15 }}>
-            <Text>{item.primaryText}</Text>
-          </TouchableOpacity>
-        )}
-      />
+      <Button title="Clear Search" onPress={() => searchRef.current?.clear()} />
     </View>
   );
 }
@@ -152,72 +62,141 @@ export default function HeadlessApp() {
 
 ---
 
-## 📚 API Reference
+## 🎨 Advanced Customization Examples
 
-### Core Configuration (`PlacesHookOptions`)
-These props apply to both the `<GooglePlacesAutocomplete />` component and the `usePlacesAutocomplete` hook.
+### 1. Custom Item Render (Safe Touch Delegation)
+When using `renderItem`, we pass an `onSelect` callback. Bind this to your own `Pressable` or `TouchableOpacity` to seamlessly trigger the internal detail-fetching loop!
 
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_API_KEY"
+  renderItem={({ item, onSelect }) => (
+    <TouchableOpacity onPress={onSelect} style={{ padding: 15, flexDirection: 'row' }}>
+      <Text>📍 {item.primaryText}</Text>
+      <Text style={{ color: 'gray' }}>{item.secondaryText}</Text>
+    </TouchableOpacity>
+  )}
+/>
+```
+
+### 2. Expo Web & CORS Setup
+Google APIs block web clients (CORS). If you are using Expo Web, create a simple proxy backend and pass the endpoints here:
+
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_API_KEY"
+  autocompleteProxyUrl="https://your-proxy.com/places/autocomplete"
+  detailsProxyUrl="https://your-proxy.com/places/details"
+/>
+```
+
+### 3. Complete Style Override (Blank Slate)
+Don't want to fight default paddings or border radii? Pass `disableDefaultStyles={true}` to wipe all internal styling and build your component from scratch.
+
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_API_KEY"
+  disableDefaultStyles={true} // Instantly strips all default React Native stylesheets
+  inputStyle={{ borderBottomWidth: 2, borderColor: 'blue', fontSize: 20 }}
+  listContainerStyle={{ backgroundColor: 'black' }}
+  listItemTextStyle={{ color: 'white' }}
+/>
+```
+
+---
+
+## 📚 Ref Methods (`GooglePlacesAutocompleteRef`)
+
+Gain total imperative control over the search bar by attaching a `ref` to the component.
+
+| Method | Return Type | Description |
+|---|---|---|
+| `getSessionToken()` | `string` | Gets the UUID currently tracking the active billing session. |
+| `getListLength()` | `number` | Returns the number of items currently in the prediction list. |
+| `focus()` | `void` | Focuses the TextInput programmatically. |
+| `blur()` | `void` | Removes focus from the TextInput. |
+| `clear()` | `void` | Clears both the input text and the prediction list simultaneously. |
+| `getText()` | `string` | Gets the current string value of the input. |
+| `setText(text)` | `void` | Sets the text programmatically, shows the list, and triggers a debounced API search. |
+| `isFocused()` | `boolean` | Checks if the input is currently focused. |
+| `clearList()` | `void` | Clears the prediction list immediately but leaves the text input intact. |
+
+---
+
+## ⚙️ Props API Reference
+
+### 🌐 Google API Configuration
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | **Required** | Your Google Maps API Key. |
-| `isNewPlaces` | `boolean` | `false` | If `true`, uses the New Places API (v1). If `false`, uses the Legacy API. |
-| `debounce` | `number` | `400` | Milliseconds to wait after the user stops typing before making a network request. |
-| `minLength` | `number` | `2` | Minimum number of characters required before triggering a search. |
-| `enableCache` | `boolean` | `true` | Caches search queries in-memory to prevent duplicate network calls. |
-| `types` | `string \| string[]` | `undefined` | Restricts results. Maps to `types` (Legacy) or `includedPrimaryTypes` (New API). |
-| `detailsFields` | `string \| string[]` | *Auto-mapped* | Define exactly which fields to fetch to reduce API cost. (e.g. `['id', 'location']`). |
-| `language` | `string` | `undefined` | Language code (e.g., `'en'`, `'fr'`). |
-| `region` | `string` | `undefined` | Region code (e.g., `'us'`, `'gb'`). |
-| `locationBias` | `string` | `undefined` | Bias results to a specific location area. |
+| `isNewPlaces` | `boolean` | `false` | Use New Places API v1 (`true`) or Legacy API (`false`). |
+| `fetchDetails` | `boolean` | `false` | Automatically fetches coordinates and full details when an item is tapped. |
+| `detailsFields`| `string \| string[]`| *Auto* | Exact fields to fetch during Place Details to reduce API costs (e.g. `['id', 'location']`). |
+| `types` | `string \| string[]`| `undefined`| Restricts results. Maps to `types` (Legacy) or `includedPrimaryTypes` (New API). |
+| `debounce` | `number` | `400` | Milliseconds to wait after the user stops typing before calling the API. |
+| `minLength` | `number` | `2` | Minimum characters needed to trigger a search request. |
+| `enableCache` | `boolean` | `true` | Caches results in-memory to prevent duplicate network calls. |
+| `language` | `string` | `undefined`| Language code to return results in (e.g., `'en'`, `'fr'`). |
+| `region` | `string` | `undefined`| Region code to bias results towards (e.g., `'us'`, `'gb'`). |
+| `locationBias` | `string` | `undefined`| A location bias parameter to prefer results near a certain area. |
+| `autocompleteProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Autocomplete API. |
+| `detailsProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Details API. |
 
-### Lifecycle Events
+### 🛠️ Behavior & Layout
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `listMode` | `'flat' \| 'floating'` | `'floating'` | `'floating'` renders an absolute dropdown. `'flat'` renders inline taking flex space. |
+| `loaderPlacement`| `'input' \| 'list' \| 'both'`| `'input'` | Where to show the loading ActivityIndicator. |
+| `showClearButton`| `boolean` | `true` | Displays the clear (✕) button inside the input when text is present. |
+| `setQueryOnSelect`| `boolean` | `true` | Auto-updates the text input with the selected place's description. |
+| `showLoaderDuringDetailsFetch`| `boolean`| `true` | Shows the input loader visually while `fetchDetails` is running. |
+| `renderListInitially`| `boolean` | `false` | Shows the empty list or cached results immediately on component mount. |
+| `keepResultsAfterBlur`| `boolean` | `false` | Prediction list remains visible on screen even after an item is selected. |
+| `keyboardShouldPersistTaps`| `string` | `'handled'`| Determines when the keyboard should close when tapping on the prediction list. |
+
+### 🎨 Render Overrides
+Replace any piece of the UI with your own components.
+| Prop | Signature | Description |
+|---|---|---|
+| `renderItem` | `({ item, onSelect }) => ReactElement`| Overrides the prediction list item. *Call `onSelect` when tapped!* |
+| `renderInput` | `({ value, onChangeText, onFocus, onClear }) => ReactElement`| Completely overrides the TextInput. |
+| `renderInputLoader` | `() => ReactElement`| Overrides the ActivityIndicator shown *inside* the TextInput. |
+| `renderListLoader` | `() => ReactElement`| Overrides the ActivityIndicator shown in the dropdown list area. |
+| `renderEmptyComponent`| `() => ReactElement`| Rendered when a search yields 0 results. |
+| `renderSeparator` | `() => ReactElement`| The divider line between list items. |
+| `renderClearButton` | `({ onPress }) => ReactElement`| Overrides the Clear (✕) button. |
+
+### ⚡ Lifecycle Events
+| Prop | Signature | Description |
+|---|---|---|
+| `onPlaceSelected` | `(details: PlaceDetails \| null, prediction: PlacePrediction) => void` | Triggered when a place is tapped. Includes full details if `fetchDetails={true}`. |
+| `onLoaderStart` | `() => void` | Triggered exactly when the search network request begins. |
+| `onLoaderEnd` | `() => void` | Triggered when the search network request finishes. |
+| `onDataLoaded` | `(data: PlacePrediction[]) => void` | Triggered when autocomplete data is successfully loaded. |
+| `onListLengthChange`| `(length: number) => void` | Triggered when the visible results array changes size. |
+| `onError` | `(error: string) => void` | Triggered when an error occurs during autocomplete search. |
+| `onStartFetchingDetails`| `(placeId: string) => void`| Triggered when starting to fetch full place details. |
+| `onErrorFetchingDetails`| `(error: string) => void`| Triggered if an error occurs while fetching full place details. |
+
+### 💅 Styling & Escape Hatches
 | Prop | Type | Description |
 |---|---|---|
-| `onLoaderStart` | `() => void` | Triggered exactly when the network request to Google begins. |
-| `onLoaderEnd` | `() => void` | Triggered when the network request finishes (success or fail). |
-| `onDataLoaded` | `(data: PlacePrediction[]) => void` | Triggered with the raw array of predictions once fetched. |
-| `onListLengthChange`| `(length: number) => void` | Triggered whenever the number of visible results changes. |
-| `onError` | `(error: string) => void` | Triggered if the API throws an error (e.g., invalid API key, quota exceeded). |
-
-### UI Component Props (`<GooglePlacesAutocomplete />`)
-| Prop | Type | Description |
-|---|---|---|
-| `placeholder` | `string` | Placeholder text for the default input. |
-| `fetchDetails` | `boolean` | If `true`, automatically calls `fetchPlaceDetails` when an item is tapped. |
-| `onPlaceSelected`| `(details: PlaceDetails \| null, prediction: PlacePrediction) => void` | Callback fired when a user selects an item from the list. |
-| `keepResultsAfterBlur`| `boolean` | If `true`, the result list will not clear automatically after a selection. |
-| `flatListProps` | `FlatListProps` | **Absolute Escape Hatch**: Pass *any* native React Native FlatList prop (`onEndReached`, `showsVerticalScrollIndicator`, etc.). |
-| **Style Overrides** | | |
-| `containerStyle` | `ViewStyle` | Style for the outermost wrapping View. |
-| `inputStyle` | `TextStyle` | Style for the default `TextInput`. |
-| `listContainerStyle`| `ViewStyle` | Style for the wrapper around the FlatList. |
-| `listStyle` | `ViewStyle` | Style directly applied to the `style` prop of the `FlatList`. |
-| `listContentContainerStyle`| `ViewStyle`| Style directly applied to the `contentContainerStyle` prop of the `FlatList`. |
-| `listItemStyle` | `ViewStyle` | Style for the default row items. |
-| `listItemTextStyle`| `TextStyle` | Style for the primary text inside default row items. |
-| **Render Overrides**| | |
-| `renderInput` | `(props) => ReactNode` | Completely replace the standard `TextInput`. |
-| `renderItem` | `({item}) => ReactNode` | Completely replace the look of the list rows. |
-| `renderLoader` | `() => ReactNode` | Completely replace the default `ActivityIndicator`. |
-| `renderEmptyComponent`| `() => ReactNode`| Rendered when a search yields 0 results. |
-| `renderSeparator` | `() => ReactNode` | Item separator line between rows. |
-
----
-
-## 🪝 Hook Reference (`usePlacesAutocomplete`)
-
-If you are using the headless approach, the hook returns the following:
-
-| Return Value | Type | Description |
-|---|---|---|
-| `query` | `string` | The current text in the search input. |
-| `setQuery` | `(text: string) => void` | Call this to update the input text. Triggers debounced search. |
-| `results` | `PlacePrediction[]` | The array of autocomplete predictions. |
-| `loading` | `boolean` | `true` while fetching predictions or place details. |
-| `error` | `string \| null` | Contains error messages if a request fails. |
-| `fetchPlaceDetails`| `(placeId: string) => Promise<PlaceDetails>` | Call this passing a `placeId` to get full coordinates and data. **Note:** Calling this automatically resets the billing session token! |
-| `clearResults` | `() => void` | Clears the `results` array immediately. |
-| `resetSession` | `() => void` | Manually generate a new UUID for Google billing sessions. |
+| `disableDefaultStyles`| `boolean \| DisableDefaultStyles` | Pass `true` to wipe ALL default styling, or an object (e.g. `{ input: true }`) to pick and choose. |
+| `containerStyle` | `StyleProp<ViewStyle>` | Style for the outermost wrapper View. |
+| `inputWrapperStyle`| `StyleProp<ViewStyle>` | Style for the View wrapping the TextInput & right-side elements. |
+| `inputStyle` | `StyleProp<TextStyle>` | Style for the native TextInput. |
+| `listContainerStyle`| `StyleProp<ViewStyle>` | Style for the View container wrapping the FlatList. |
+| `listStyle` | `StyleProp<ViewStyle>` | Style applied to the `style` prop of the FlatList. |
+| `listContentContainerStyle`| `StyleProp<ViewStyle>` | Style applied to the `contentContainerStyle` prop of the FlatList. |
+| `listLoaderContainerStyle`| `StyleProp<ViewStyle>` | Style applied to the wrapper around the list ActivityIndicator. |
+| `listItemStyle` | `StyleProp<ViewStyle>` | Style for the default prediction row item. |
+| `listItemTextStyle`| `StyleProp<TextStyle>` | Style for the primary text in the default list item. |
+| `clearButtonStyle` | `StyleProp<ViewStyle>` | Style for the wrapper around the clear (✕) button. |
+| `clearButtonTextStyle`| `StyleProp<TextStyle>` | Style for the text inside the clear (✕) button. |
+| `inputLoaderSize` | `number \| 'small' \| 'large'` | Size of the ActivityIndicator inside the input. Default: `'small'`. |
+| `inputLoaderColor` | `string` | Color of the input ActivityIndicator. Default: `'#888'`. |
+| `textInputProps` | `TextInputProps` | **Absolute Escape Hatch:** Pass ANY native TextInput prop (`autoFocus`, `maxLength`). |
+| `flatListProps` | `FlatListProps` | **Absolute Escape Hatch:** Pass ANY native FlatList prop (`onEndReached`, `showsVerticalScrollIndicator`). |
 
 ---
 
@@ -232,11 +211,11 @@ interface PlacePrediction {
   secondaryText: string;
   distanceMeters?: number; // New API specific
   types?: string[];
-  originalData: Record<string, any>; // 100% of the raw JSON from Google
+  originalData: Record<string, unknown>; // 100% of the raw JSON from Google Autocomplete
 }
 ```
 
-### `PlaceDetails` (Returned by `fetchPlaceDetails`)
+### `PlaceDetails` (Returned in `onPlaceSelected` or `fetchPlaceDetails`)
 ```typescript
 interface PlaceDetails {
   placeId: string;
@@ -247,30 +226,40 @@ interface PlaceDetails {
   phoneNumber?: string;
   internationalPhoneNumber?: string;
   openingHours?: string[];
-  photos?: any[];
+  photos?: Record<string, unknown>[];
   website?: string;
   rating?: number;
   userRatingsTotal?: number;
-  addressComponents?: any[];
+  addressComponents?: Record<string, unknown>[];
   types?: string[];
-  originalData: Record<string, any>; // 100% of the raw JSON from Google
+  originalData: Record<string, unknown>; // 100% of the raw JSON from Google Details
 }
 ```
 
 ---
 
-## 💰 How this package saves you money (Google API Billing)
+## 🪝 Headless Hook (`usePlacesAutocomplete`)
 
-Google Places API pricing can skyrocket if not managed correctly. This library handles enterprise-grade optimizations internally:
+If you are building your own UI entirely from scratch, you can bypass our component and use the core engine:
 
-1. **Session Tokens**: As you type, requests are grouped under a single UUID. You are billed for *one* Autocomplete session rather than per-keystroke. Once `fetchPlaceDetails` is called, the session is completed and the UUID is automatically reset.
-2. **Debouncing**: Pauses network calls until the user stops typing for `400ms` (customizable).
-3. **Caching**: If a user types "New York", deletes the "k", and re-types the "k", the package serves the results from local memory instead of pinging Google again.
-4. **Abort Controllers**: If network latency is high and a user types fast, older outgoing requests are cancelled (`AbortController`), ensuring no overlapping data races or wasted bandwidth.
-5. **Field Masking (`detailsFields`)**: Passing specific fields tells Google to *only* return and bill you for that specific data (e.g. requesting coordinates is cheaper than requesting photos and reviews).
+```tsx
+import { usePlacesAutocomplete } from 'react-native-smart-gplaces';
+
+const { 
+  query, 
+  setQuery, 
+  results, 
+  loading, 
+  fetchingDetails,
+  error, 
+  fetchPlaceDetails, 
+  clearResults,
+  resetSession 
+} = usePlacesAutocomplete({ apiKey: 'YOUR_API_KEY', isNewPlaces: true });
+```
 
 ---
 
 ## License
 
-MIT License
+MIT
