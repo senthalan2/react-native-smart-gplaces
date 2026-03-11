@@ -39,12 +39,16 @@ export const GooglePlacesAutocomplete = forwardRef<
     listLoaderContainerStyle,
     listItemStyle,
     listItemTextStyle,
+
+    // Custom render props
     renderInput,
     renderItem,
-    renderLoader,
+    renderInputLoader,
+    renderListLoader,
     renderEmptyComponent,
     renderSeparator,
     renderClearButton,
+
     fetchDetails = false,
     onPlaceSelected,
     keepResultsAfterBlur = false,
@@ -53,6 +57,12 @@ export const GooglePlacesAutocomplete = forwardRef<
     renderListInitially = false,
     listMode = 'floating',
     loaderPlacement = 'input',
+
+    // 🔥 New Configuration Props
+    showClearButton = true,
+    setQueryOnSelect = true,
+    showLoaderDuringDetailsFetch = true,
+
     inputLoaderSize = 'small',
     inputLoaderColor = '#888',
     disableDefaultStyles = false,
@@ -65,16 +75,15 @@ export const GooglePlacesAutocomplete = forwardRef<
     setQuery,
     results,
     loading,
+    fetchingDetails,
     fetchPlaceDetails,
     clearResults,
     getSessionToken,
   } = usePlacesAutocomplete(props);
   const [listVisible, setListVisible] = useState(!!renderListInitially);
 
-  // 🔥 THE FIX: ElementRef dynamically maps to your environment's internal TextInput instance type!
   const textInputRef = useRef<React.ElementRef<typeof TextInput>>(null);
 
-  // Expose Imperative Methods safely without any TS errors or "as any" hacks!
   useImperativeHandle(ref, () => ({
     getSessionToken: () => getSessionToken(),
     getListLength: () => results.length,
@@ -123,7 +132,10 @@ export const GooglePlacesAutocomplete = forwardRef<
   };
 
   const handleSelect = async (item: PlacePrediction) => {
-    setQuery(item.description);
+    if (setQueryOnSelect) {
+      setQuery(item.description);
+    }
+
     setListVisible(false);
 
     if (!keepResultsAfterBlur) clearResults();
@@ -165,11 +177,19 @@ export const GooglePlacesAutocomplete = forwardRef<
 
   const showList =
     listVisible && (query.length >= minLength || renderListInitially);
-  const showInputLoader =
+
+  // Logic mapping for Loader visibility
+  const isSearchLoadingInput =
     loading && (loaderPlacement === 'input' || loaderPlacement === 'both');
-  const showListLoader =
+  const isDetailsLoadingInput = fetchingDetails && showLoaderDuringDetailsFetch;
+
+  const showInputLoaderUI = isSearchLoadingInput || isDetailsLoadingInput;
+  const showListLoaderUI =
     loading && (loaderPlacement === 'list' || loaderPlacement === 'both');
-  const showClearButton = !showInputLoader && query.length > 0;
+
+  // Clear button is visible if enabled by prop, input loader is hidden, and there's text to clear
+  const shouldShowClearButton =
+    showClearButton && !showInputLoaderUI && query.length > 0;
 
   return (
     <View
@@ -207,9 +227,9 @@ export const GooglePlacesAutocomplete = forwardRef<
           />
         )}
 
-        {showInputLoader ? (
-          renderLoader ? (
-            renderLoader()
+        {showInputLoaderUI ? (
+          renderInputLoader ? (
+            renderInputLoader()
           ) : (
             <ActivityIndicator
               style={[!isStyleDisabled('loaderInput') && styles.loaderInput]}
@@ -217,7 +237,7 @@ export const GooglePlacesAutocomplete = forwardRef<
               color={inputLoaderColor}
             />
           )
-        ) : showClearButton ? (
+        ) : shouldShowClearButton ? (
           renderClearButton ? (
             renderClearButton({ onPress: handleClear })
           ) : (
@@ -254,7 +274,7 @@ export const GooglePlacesAutocomplete = forwardRef<
             listContainerStyle,
           ]}
         >
-          {showListLoader ? (
+          {showListLoaderUI ? (
             <View
               style={[
                 !isStyleDisabled('listLoaderContainer') &&
@@ -262,8 +282,8 @@ export const GooglePlacesAutocomplete = forwardRef<
                 listLoaderContainerStyle,
               ]}
             >
-              {renderLoader ? (
-                renderLoader()
+              {renderListLoader ? (
+                renderListLoader()
               ) : (
                 <ActivityIndicator size="large" color="#888" />
               )}

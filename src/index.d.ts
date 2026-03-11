@@ -172,8 +172,15 @@ declare module 'react-native-smart-gplaces' {
      * 'flat': Renders inline, taking up remaining flex space (Ideal for full-screen search pages).
      */
     listMode?: 'flat' | 'floating';
-    /** Dictates where to show the loading ActivityIndicator. 'input' (inline), 'list' (centered below), or 'both'. */
+    /** Dictates where to show the search loading ActivityIndicator. 'input' (inline), 'list' (centered below), or 'both'. */
     loaderPlacement?: 'input' | 'list' | 'both';
+
+    /** If true, displays the clear (✕) button when text is present. Default is true. */
+    showClearButton?: boolean;
+    /** If true, automatically updates the text input with the selected place's description upon selection. Default is true. */
+    setQueryOnSelect?: boolean;
+    /** If true, automatically shows the input loader while `fetchDetails` is running. Default is true. */
+    showLoaderDuringDetailsFetch?: boolean;
 
     /** Triggered when a place is tapped. Includes full details if `fetchDetails` is true, otherwise null. */
     onPlaceSelected?: (
@@ -193,8 +200,10 @@ declare module 'react-native-smart-gplaces' {
     renderInput?: (props: RenderInputProps) => React.ReactElement;
     /** Completely overrides the design of the individual prediction list items. */
     renderItem?: (props: RenderItemProps) => React.ReactElement;
-    /** Completely overrides the default ActivityIndicator loading component. */
-    renderLoader?: () => React.ReactElement;
+    /** Completely overrides the default ActivityIndicator loading component shown inside the TextInput. */
+    renderInputLoader?: () => React.ReactElement;
+    /** Completely overrides the default ActivityIndicator loading component shown in the List dropdown. */
+    renderListLoader?: () => React.ReactElement;
     /** Completely overrides the UI shown when a search yields 0 results. */
     renderEmptyComponent?: () => React.ReactElement;
     /** Completely overrides the line separator rendered between list items. */
