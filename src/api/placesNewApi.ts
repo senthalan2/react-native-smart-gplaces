@@ -1,18 +1,30 @@
-import { type PlacePrediction, type PlaceDetails, type PlacesHookOptions } from '../types';
+import {
+  type PlacePrediction,
+  type PlaceDetails,
+  type PlacesHookOptions,
+} from '../types';
 
 export const fetchNewAutocomplete = async (
-  query: string, apiKey: string, sessionToken: string, signal: AbortSignal, options: PlacesHookOptions
+  query: string,
+  apiKey: string,
+  sessionToken: string,
+  signal: AbortSignal,
+  options: PlacesHookOptions
 ): Promise<PlacePrediction[]> => {
-  const body: any = { input: query, sessionToken };
+  const body: Record<string, any> = { input: query, sessionToken };
 
   if (options.language) body.languageCode = options.language;
   if (options.region) body.regionCode = options.region;
-
   if (options.types) {
-    body.includedPrimaryTypes = Array.isArray(options.types) ? options.types :[options.types];
+    body.includedPrimaryTypes = Array.isArray(options.types)
+      ? options.types
+      : [options.types];
   }
 
-  const res = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+  const baseUrl =
+    options.autocompleteProxyUrl ||
+    'https://places.googleapis.com/v1/places:autocomplete';
+  const res = await fetch(baseUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': apiKey },
     body: JSON.stringify(body),
@@ -22,11 +34,14 @@ export const fetchNewAutocomplete = async (
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
 
-  return (data.suggestions ||[]).map((p: any) => ({
+  return (data.suggestions || []).map((p: Record<string, any>) => ({
     placeId: p.placePrediction.placeId,
     description: p.placePrediction.text.text,
-    primaryText: p.placePrediction.structuredFormat?.mainText?.text || p.placePrediction.text.text,
-    secondaryText: p.placePrediction.structuredFormat?.secondaryText?.text || '',
+    primaryText:
+      p.placePrediction.structuredFormat?.mainText?.text ||
+      p.placePrediction.text.text,
+    secondaryText:
+      p.placePrediction.structuredFormat?.secondaryText?.text || '',
     distanceMeters: p.placePrediction.distanceMeters,
     types: p.placePrediction.types,
     originalData: p,
@@ -34,21 +49,31 @@ export const fetchNewAutocomplete = async (
 };
 
 export const fetchNewDetails = async (
-  placeId: string, apiKey: string, sessionToken: string, options: PlacesHookOptions
+  placeId: string,
+  apiKey: string,
+  sessionToken: string,
+  options: PlacesHookOptions
 ): Promise<PlaceDetails> => {
-  
-  const defaultFieldMask = 'id,displayName,formattedAddress,location,nationalPhoneNumber,internationalPhoneNumber,regularOpeningHours,photos,websiteUri,rating,userRatingCount,addressComponents,types';
-  
-  const fieldMask = options.detailsFields 
-    ? (Array.isArray(options.detailsFields) ? options.detailsFields.join(',') : options.detailsFields)
+  const defaultFieldMask =
+    'id,displayName,formattedAddress,location,nationalPhoneNumber,internationalPhoneNumber,regularOpeningHours,photos,websiteUri,rating,userRatingCount,addressComponents,types';
+  const fieldMask = options.detailsFields
+    ? Array.isArray(options.detailsFields)
+      ? options.detailsFields.join(',')
+      : options.detailsFields
     : defaultFieldMask;
 
   const headers = {
     'X-Goog-Api-Key': apiKey,
-    'X-Goog-FieldMask': fieldMask
+    'X-Goog-FieldMask': fieldMask,
   };
 
-  const res = await fetch(`https://places.googleapis.com/v1/places/${placeId}?sessionToken=${sessionToken}`, { headers });
+  const baseUrl =
+    options.detailsProxyUrl ||
+    `https://places.googleapis.com/v1/places/${placeId}`;
+  const res = await fetch(`${baseUrl}?sessionToken=${sessionToken}`, {
+    headers,
+  });
+
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
 

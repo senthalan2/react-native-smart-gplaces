@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import {
   View,
   FlatList,
@@ -13,11 +18,14 @@ import {
   type PlacesComponentProps,
   type PlacePrediction,
   type DisableDefaultStyles,
+  type GooglePlacesAutocompleteRef,
+  type TextInputFocusEvent,
 } from '../types';
 
-export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
-  props
-) => {
+export const GooglePlacesAutocomplete = forwardRef<
+  GooglePlacesAutocompleteRef,
+  PlacesComponentProps
+>((props, ref) => {
   const {
     placeholder = 'Search places...',
     containerStyle,
@@ -42,23 +50,54 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
     keepResultsAfterBlur = false,
     keyboardShouldPersistTaps = 'handled',
     minLength = 2,
-
     renderListInitially = false,
     listMode = 'floating',
-
     loaderPlacement = 'input',
     inputLoaderSize = 'small',
     inputLoaderColor = '#888',
-    disableDefaultStyles = false, // Defaults to false
+    disableDefaultStyles = false,
     textInputProps,
     flatListProps,
   } = props;
 
-  const { query, setQuery, results, loading, fetchPlaceDetails, clearResults } =
-    usePlacesAutocomplete(props);
+  const {
+    query,
+    setQuery,
+    results,
+    loading,
+    fetchPlaceDetails,
+    clearResults,
+    getSessionToken,
+  } = usePlacesAutocomplete(props);
   const [listVisible, setListVisible] = useState(!!renderListInitially);
 
-  // 🔥 NEW HELPER: Instantly checks if a specific style (or all styles) should be disabled
+  // 🔥 THE FIX: ElementRef dynamically maps to your environment's internal TextInput instance type!
+  const textInputRef = useRef<React.ElementRef<typeof TextInput>>(null);
+
+  // Expose Imperative Methods safely without any TS errors or "as any" hacks!
+  useImperativeHandle(ref, () => ({
+    getSessionToken: () => getSessionToken(),
+    getListLength: () => results.length,
+    focus: () => textInputRef.current?.focus(),
+    blur: () => textInputRef.current?.blur(),
+    clear: () => {
+      setQuery('');
+      clearResults();
+      setListVisible(false);
+      textInputRef.current?.clear();
+    },
+    getText: () => query,
+    setText: (text: string) => {
+      setQuery(text);
+      setListVisible(true);
+    },
+    isFocused: () => textInputRef.current?.isFocused() ?? false,
+    clearList: () => {
+      clearResults();
+      setListVisible(false);
+    },
+  }));
+
   const isStyleDisabled = (key: keyof DisableDefaultStyles) => {
     if (typeof disableDefaultStyles === 'boolean') return disableDefaultStyles;
     return !!disableDefaultStyles[key];
@@ -69,7 +108,7 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
     setListVisible(true);
   };
 
-  const handleFocus = (e: any) => {
+  const handleFocus = (e: TextInputFocusEvent) => {
     setListVisible(true);
     if (textInputProps?.onFocus) textInputProps.onFocus(e);
   };
@@ -80,6 +119,7 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
     if (!renderListInitially) {
       setListVisible(false);
     }
+    textInputRef.current?.clear();
   };
 
   const handleSelect = async (item: PlacePrediction) => {
@@ -89,8 +129,12 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
     if (!keepResultsAfterBlur) clearResults();
 
     if (fetchDetails && onPlaceSelected) {
-      const details = await fetchPlaceDetails(item.placeId);
-      onPlaceSelected(details, item);
+      try {
+        const details = await fetchPlaceDetails(item.placeId);
+        onPlaceSelected(details, item);
+      } catch (error) {
+        onPlaceSelected(null, item);
+      }
     } else if (onPlaceSelected) {
       onPlaceSelected(null, item);
     }
@@ -121,14 +165,10 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
 
   const showList =
     listVisible && (query.length >= minLength || renderListInitially);
-
-  // Layout Logic specific to the new `both` loader type
   const showInputLoader =
     loading && (loaderPlacement === 'input' || loaderPlacement === 'both');
   const showListLoader =
     loading && (loaderPlacement === 'list' || loaderPlacement === 'both');
-
-  // Only show the clear button if we aren't currently taking up the space with the input loader
   const showClearButton = !showInputLoader && query.length > 0;
 
   return (
@@ -156,6 +196,7 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
           })
         ) : (
           <TextInput
+            ref={textInputRef}
             placeholder={placeholder}
             placeholderTextColor="#888"
             {...textInputProps}
@@ -166,15 +207,14 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
           />
         )}
 
-        {/* Right-Side Input Elements */}
         {showInputLoader ? (
           renderLoader ? (
             renderLoader()
           ) : (
             <ActivityIndicator
               style={[!isStyleDisabled('loaderInput') && styles.loaderInput]}
-              size={inputLoaderSize ? inputLoaderSize : 'small'}
-              color={inputLoaderColor ? inputLoaderColor : '#888'}
+              size={inputLoaderSize}
+              color={inputLoaderColor}
             />
           )
         ) : showClearButton ? (
@@ -239,7 +279,11 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
               keyExtractor={(item) => item.placeId}
               keyboardShouldPersistTaps={keyboardShouldPersistTaps}
               renderItem={({ item }) =>
-                renderItem ? renderItem({ item }) : <DefaultItem item={item} />
+                renderItem ? (
+                  renderItem({ item, onSelect: () => handleSelect(item) })
+                ) : (
+                  <DefaultItem item={item} />
+                )
               }
               ItemSeparatorComponent={
                 renderSeparator ||
@@ -267,13 +311,12 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
       )}
     </View>
   );
-};
+});
 
 // 💅 Master Layout Styles
 const styles = StyleSheet.create({
   container: { zIndex: 1, width: '100%' },
   containerFlat: { flex: 1 },
-
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -285,7 +328,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 12,
   },
-
   input: {
     flex: 1,
     height: 48,
@@ -294,16 +336,10 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 16,
   },
-
   loaderInput: { paddingLeft: 8 },
   clearButton: { paddingLeft: 8, paddingRight: 4, paddingVertical: 8 },
   clearButtonText: { color: '#888', fontSize: 18, fontWeight: '600' },
-
-  listContainerBase: {
-    marginTop: 4,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-  },
+  listContainerBase: { marginTop: 4, backgroundColor: '#fff', borderRadius: 8 },
   listContainerFloating: {
     position: 'absolute',
     top: '100%',
@@ -311,15 +347,19 @@ const styles = StyleSheet.create({
     right: 0,
     maxHeight: 250,
     zIndex: 10,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   listContainerFlat: { position: 'relative', flex: 1 },
-
   listLoaderContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 20,
   },
-
   list: { width: '100%' },
   listContent: { flexGrow: 1 },
   listItem: { padding: 12 },
