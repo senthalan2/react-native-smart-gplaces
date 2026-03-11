@@ -145,13 +145,14 @@ Gain total imperative control over the search bar by attaching a `ref` to the co
 ### 🛠️ Behavior & Layout
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `listMode` | `'flat' \| 'floating'` | `'floating'` | `'floating'` renders an absolute dropdown. `'flat'` renders inline taking flex space. |
+| `listMode` | `'flat' \| 'floating'` | `'flat'` | `'floating'` renders an absolute dropdown. `'flat'` renders inline taking flex space. |
 | `loaderPlacement`| `'input' \| 'list' \| 'both'`| `'input'` | Where to show the loading ActivityIndicator. |
 | `showClearButton`| `boolean` | `true` | Displays the clear (✕) button inside the input when text is present. |
 | `setQueryOnSelect`| `boolean` | `true` | Auto-updates the text input with the selected place's description. |
 | `showLoaderDuringDetailsFetch`| `boolean`| `true` | Shows the input loader visually while `fetchDetails` is running. |
 | `renderListInitially`| `boolean` | `false` | Shows the empty list or cached results immediately on component mount. |
-| `keepResultsAfterBlur`| `boolean` | `false` | Prediction list remains visible on screen even after an item is selected. |
+| `keepResultsAfterBlur`| `boolean` | `false` | Prediction list remains visible on screen even after the TextInput loses focus. |
+| `blurOnSelect`| `boolean` | `true` | TextInput loses focus when a prediction item is selected. |
 | `keyboardShouldPersistTaps`| `string` | `'handled'`| Determines when the keyboard should close when tapping on the prediction list. |
 
 ### 🎨 Render Overrides
@@ -263,3 +264,20 @@ const {
 ## License
 
 MIT
+
+---
+
+## Support
+
+If you find this project helpful, please consider supporting it:  
+
+- ⭐ **Give it a star on GitHub** – Your stars help me keep improving this project!  
+[![GitHub stars](https://img.shields.io/github/stars/senthalan2/react-native-smart-gplaces?style=social)](https://github.com/senthalan2/react-native-smart-gplaces/stargazers)  
+
+- ☕ **Buy me a coffee** – Your support keeps me motivated to maintain and enhance this package!  
+
+<a href="https://www.buymeacoffee.com/senthalan2" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
+</a>  
+
+Thank you for your support! 🙏
