@@ -201,19 +201,21 @@ export interface PlacesComponentProps extends PlacesHookOptions {
   disableDefaultStyles?: boolean | DisableDefaultStyles;
 
   /** Completely overrides the default TextInput component. */
-  renderInput?: (props: RenderInputProps) => React.ReactElement;
+  renderInput?: (props: RenderInputProps) => React.ReactElement | undefined;
   /** Completely overrides the design of the individual prediction list items. */
-  renderItem?: (props: RenderItemProps) => React.ReactElement;
+  renderItem?: (props: RenderItemProps) => React.ReactElement | undefined;
   /** Completely overrides the default ActivityIndicator loading component shown inside the TextInput. */
-  renderInputLoader?: () => React.ReactElement;
+  renderInputLoader?: () => React.ReactElement | undefined;
   /** Completely overrides the default ActivityIndicator loading component shown in the List dropdown. */
-  renderListLoader?: () => React.ReactElement;
+  renderListLoader?: () => React.ReactElement | undefined;
   /** Completely overrides the UI shown when a search yields 0 results. */
-  renderEmptyComponent?: () => React.ReactElement;
+  renderEmptyComponent?: () => React.ReactElement | undefined;
   /** Completely overrides the line separator rendered between list items. */
-  renderSeparator?: () => React.ReactElement;
+  renderSeparator?: () => React.ReactElement | undefined;
   /** Completely overrides the design of the Clear (✕) button inside the input. */
-  renderClearButton?: (props: { onPress: () => void }) => React.ReactElement;
+  renderClearButton?: (props: {
+    onPress: () => void;
+  }) => React.ReactElement | undefined;
 
   /** Custom style applied to the outermost wrapper View of the component. */
   containerStyle?: StyleProp<ViewStyle>;
