@@ -264,3 +264,20 @@ const {
 ## License
 
 MIT
+
+---
+
+## Support
+
+If you find this project helpful, please consider supporting it:  
+
+- ⭐ **Give it a star on GitHub** – Your stars help me keep improving this project!  
+[![GitHub stars](https://img.shields.io/github/stars/senthalan2/react-native-smart-gplaces?style=social)](https://github.com/senthalan2/react-native-smart-gplaces/stargazers)  
+
+- ☕ **Buy me a coffee** – Your support keeps me motivated to maintain and enhance this package!  
+
+<a href="https://www.buymeacoffee.com/senthalan2" target="_blank">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-red.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
+</a>  
+
+Thank you for your support! 🙏
