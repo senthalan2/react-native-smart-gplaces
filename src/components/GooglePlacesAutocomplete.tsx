@@ -28,6 +28,7 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
     listContainerStyle,
     listStyle,
     listContentContainerStyle,
+    listLoaderContainerStyle,
     listItemStyle,
     listItemTextStyle,
     renderInput,
@@ -44,7 +45,10 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
 
     renderListInitially = false,
     listMode = 'floating',
+
     loaderPlacement = 'input',
+    inputLoaderSize = 'small',
+    inputLoaderColor = '#888',
     disableDefaultStyles = false, // Defaults to false
     textInputProps,
     flatListProps,
@@ -169,8 +173,8 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
           ) : (
             <ActivityIndicator
               style={[!isStyleDisabled('loaderInput') && styles.loaderInput]}
-              size="small"
-              color="#888"
+              size={inputLoaderSize ? inputLoaderSize : 'small'}
+              color={inputLoaderColor ? inputLoaderColor : '#888'}
             />
           )
         ) : showClearButton ? (
@@ -215,6 +219,7 @@ export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps> = (
               style={[
                 !isStyleDisabled('listLoaderContainer') &&
                   styles.listLoaderContainer,
+                listLoaderContainerStyle,
               ]}
             >
               {renderLoader ? (
@@ -298,11 +303,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     backgroundColor: '#fff',
     borderRadius: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
   },
   listContainerFloating: {
     position: 'absolute',
@@ -312,11 +312,10 @@ const styles = StyleSheet.create({
     maxHeight: 250,
     zIndex: 10,
   },
-  listContainerFlat: { position: 'relative', flex: 1, maxHeight: 'none' },
+  listContainerFlat: { position: 'relative', flex: 1 },
 
   listLoaderContainer: {
     flex: 1,
-    minHeight: 100,
     justifyContent: 'center',
     alignItems: 'center',
   },

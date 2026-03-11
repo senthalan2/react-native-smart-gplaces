@@ -110,9 +110,15 @@ declare module 'react-native-smart-gplaces' {
     clearButtonTextStyle?: StyleProp<TextStyle>;
     listContainerStyle?: StyleProp<ViewStyle>;
     listStyle?: StyleProp<ViewStyle>;
+    listLoaderContainerStyle?: StyleProp<ViewStyle>;
     listContentContainerStyle?: StyleProp<ViewStyle>;
     listItemStyle?: StyleProp<ViewStyle>;
     listItemTextStyle?: StyleProp<TextStyle>;
+    /**
+     * Size of the indicator. Small has a height of 20, large has a height of 36.
+     */
+    inputLoaderSize?: number | 'small' | 'large' | undefined;
+    inputLoaderColor?: string;
 
     textInputProps?: Omit<TextInputProps, 'value' | 'onChangeText'>;
     flatListProps?: Omit<
