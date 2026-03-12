@@ -1,3 +1,4 @@
+import { ComponentType } from 'react';
 import type {
   StyleProp,
   ViewStyle,
@@ -361,7 +362,9 @@ declare module 'react-native-smart-gplaces' {
     clearList: () => void;
   }
 
-  export const GooglePlacesAutocomplete: React.FC<PlacesComponentProps>;
+  export const GooglePlacesAutocomplete: ComponentType<
+    PlacesComponentProps & { ref?: React.Ref<GooglePlacesAutocompleteRef> }
+  >;
   export const usePlacesAutocomplete: (
     options: PlacesHookOptions
   ) => UsePlacesAutocompleteReturn;

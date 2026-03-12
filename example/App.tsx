@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { GooglePlacesAutocomplete } from 'react-native-smart-gplaces';
+import {
+  GooglePlacesAutocomplete,
+  type GooglePlacesAutocompleteRef,
+} from 'react-native-smart-gplaces';
 
 export default function App() {
   const [isLoading, setisLoading] = useState(false);
   const [dataLength, setdataLength] = useState(0);
   const [error, seterror] = useState<string | null>(null);
+  const placesRef = useRef<GooglePlacesAutocompleteRef>(null);
 
   return (
     <SafeAreaProvider>
@@ -19,6 +23,7 @@ export default function App() {
         }}
       >
         <GooglePlacesAutocomplete
+          ref={placesRef}
           apiKey={'GOOGLE_PLACES_API_KEY'}
           isNewPlaces={true}
           fetchDetails={true}
@@ -104,7 +109,7 @@ export default function App() {
             );
           }}
           renderEmptyComponent={() => {
-            return !isLoading ? (
+            return (
               <View
                 style={{
                   flex: 1,
@@ -123,8 +128,6 @@ export default function App() {
                   {error ? error : 'No Data Found'}
                 </Text>
               </View>
-            ) : (
-              <></>
             );
           }}
           renderListInitially={true}
