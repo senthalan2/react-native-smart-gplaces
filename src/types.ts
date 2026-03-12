@@ -77,34 +77,51 @@ export interface PlacesHookOptions {
   debounce?: number;
   /** Minimum characters needed to trigger a search request. Default is 2. */
   minLength?: number;
-  /** The language code to return results in (e.g., 'en', 'fr'). */
+  // --- GOOGLE API: UNIFIED PARAMETERS ---
+
+  /** (Legacy & New) The language code to return results in (e.g., 'en', 'fr'). */
   language?: string;
-  /** The region code to bias results towards (e.g., 'us', 'gb'). */
+  /** (Legacy & New) The region code to bias results towards (e.g., 'us', 'gb'). */
   region?: string;
-  /** Maps to `types` (Legacy) or `includedPrimaryTypes` (New API). Restricts the types of places returned. */
+  /** (Legacy & New) Maps to `types` (Legacy) or `includedPrimaryTypes` (New API). Restricts the types of places returned. */
   types?: string | string[];
-  /** Define exactly which fields to fetch during Place Details to reduce API cost. e.g., ['id', 'location'] */
+  /** (Legacy & New) Restricts results to specific countries. Array of 2-character ISO 3166-1 Alpha-2 country codes (e.g., ['us', 'ca']). */
+  countries?: string | string[];
+  /** (Legacy & New) The origin point from which to calculate straight-line distance to the destination (`distanceMeters`). */
+  origin?: LocationCoordinate;
+  /** (Legacy & New) The position, in the input term, of the last character that the service uses to match predictions. */
+  offset?: number;
+  /** (Legacy & New) Define exactly which fields to fetch during Place Details to reduce API cost. e.g., ['id', 'location'] */
   detailsFields?: string | string[];
-  /** Pass the user's current coordinates to prioritize nearby places in the search results. */
+
+  // --- GOOGLE API: LOCATION BIASING & RESTRICTION ---
+
+  /** (Legacy & New) Passes the user's current coordinates to prioritize nearby places (Soft Limit). */
   currentLocation?: LocationCoordinate;
-  /** The radius (in meters) around the `currentLocation` to bias results. Default is 50000 (50km). */
+  /** (Legacy & New) Passes coordinates to STRICTLY RESTRICT results to this area (Hard Limit). Applies `strictbounds` in Legacy API. */
+  locationRestriction?: LocationCoordinate;
+  /** (Legacy & New) The radius (in meters) around `currentLocation` or `locationRestriction`. Default is 50000 (50km). */
   locationRadius?: number;
-  /** Advanced: Location bias parameter to prefer results near a certain area.
-   * Accepts a raw location bias string (legacy) if you don't want to use `currentLocation`.
-   * */
+  /** (Legacy Only) Advanced: Raw location bias string if you don't want to use `currentLocation`. */
   locationBias?: string;
-  /** Advanced: Radius in meters to bias results around the location (Legacy API).
-   * Accepts a raw radius parameter.
-   * */
+  /** (Legacy Only) Advanced: Raw radius parameter. */
   radius?: number;
+
+  // --- GOOGLE API: LEGACY SPECIFIC FEATURES ---
+
+  /** (Legacy Details Only) Specify whether to disable translation of reviews. */
+  reviewsNoTranslations?: boolean;
+  /** (Legacy Details Only) Sorting method for reviews: 'most_relevant' or 'newest'. */
+  reviewsSort?: 'most_relevant' | 'newest';
+
+  // --- PACKAGE ARCHITECTURE CONFIG --
+
   /** Caches results in-memory to prevent duplicate network calls. Default is true. */
   enableCache?: boolean;
-
   /** CORS bypass proxy URL for the Autocomplete API (Crucial for Expo Web). */
   autocompleteProxyUrl?: string;
   /** CORS bypass proxy URL for the Details API (Crucial for Expo Web). */
   detailsProxyUrl?: string;
-
   /** Triggered exactly when the search network request begins. */
   onLoaderStart?: () => void;
   /** Triggered when the search network request finishes, regardless of success or failure. */

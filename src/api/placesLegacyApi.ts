@@ -19,6 +19,12 @@ export const fetchLegacyAutocomplete = async (
 
   if (options.language) params.append('language', options.language);
   if (options.region) params.append('region', options.region);
+  if (options.offset) params.append('offset', options.offset.toString());
+  if (options.origin)
+    params.append(
+      'origin',
+      `${options.origin.latitude},${options.origin.longitude}`
+    );
 
   if (options.types) {
     const typesStr = Array.isArray(options.types)
@@ -27,8 +33,26 @@ export const fetchLegacyAutocomplete = async (
     params.append('types', typesStr);
   }
 
-  // 🔥 NEW: Apply Location Biasing
-  if (options.currentLocation) {
+  // Legacy API maps Countries to `components=country:US|country:PR` (Max 5)
+  if (options.countries) {
+    const codes = Array.isArray(options.countries)
+      ? options.countries
+      : [options.countries];
+    params.append(
+      'components',
+      codes.map((c) => `country:${c.toLowerCase()}`).join('|')
+    );
+  }
+
+  // Location Rules
+  if (options.locationRestriction) {
+    params.append(
+      'location',
+      `${options.locationRestriction.latitude},${options.locationRestriction.longitude}`
+    );
+    params.append('radius', (options.locationRadius || 50000).toString());
+    params.append('strictbounds', 'true'); // 🔥 Legacy API Hard Limit
+  } else if (options.currentLocation) {
     params.append(
       'location',
       `${options.currentLocation.latitude},${options.currentLocation.longitude}`
@@ -53,6 +77,7 @@ export const fetchLegacyAutocomplete = async (
     description: p.description,
     primaryText: p.structured_formatting?.main_text || p.description,
     secondaryText: p.structured_formatting?.secondary_text || '',
+    distanceMeters: p.distance_meters, // Present if origin was passed
     types: p.types,
     originalData: p,
   }));
@@ -78,12 +103,19 @@ export const fetchLegacyDetails = async (
     sessiontoken: sessionToken,
     fields: fieldsStr,
   });
+
+  if (options.language) params.append('language', options.language);
+  if (options.region) params.append('region', options.region);
+  if (options.reviewsNoTranslations)
+    params.append('reviews_no_translations', 'true');
+  if (options.reviewsSort) params.append('reviews_sort', options.reviewsSort);
+
   const baseUrl =
     options.detailsProxyUrl ||
     'https://maps.googleapis.com/maps/api/place/details/json';
-
   const res = await fetch(`${baseUrl}?${params.toString()}`);
   const data = await res.json();
+
   if (data.status !== 'OK') throw new Error(data.error_message || data.status);
 
   const d = data.result;
