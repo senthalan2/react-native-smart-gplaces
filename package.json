@@ -1,6 +1,6 @@
 {
   "name": "react-native-smart-gplaces",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A highly optimized, dependency-free, customizable React Native library for the **Google Places API**.",
   "main": "./src/index.ts",
   "types": "./src/index.d.ts",
