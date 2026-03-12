@@ -8,13 +8,14 @@ An enterprise-grade, dependency-free, perfectly typed, and fully customizable Re
 
 ## ✨ Why this library?
 
+- **Fully Featured Google Integrations**: Supports *every* available parameter Google offers, seamlessly bridging the gap between APIs via unified props (e.g., `countries`, `origin`, `locationRestriction`).
 - **Modern by Default**: Uses the latest, recommended **Google Places API (v1)** out-of-the-box (Legacy API is fully supported if needed).
 - **Nearby Places Bias**: Prioritize local search results effortlessly by passing device coordinates via the `currentLocation` prop!
 - **Cost Optimized**: Automatically handles UUID Session Tokens, Input Debouncing, Memory Caching, and Request Cancellations (`AbortController`) to drastically reduce your Google Cloud billing.
 - **Crash-Proof & Zero Data Loss**: Built with meticulous try-catch blocks. Guaranteed access to `originalData` containing the unadulterated Google API JSON. You will never miss an undocumented field.
 - **Expo Web Ready**: Includes `autocompleteProxyUrl` and `detailsProxyUrl` props to easily bypass strict CORS browser restrictions on Web.
 - **Bulletproof UI Layout**: Flexbox layouts guarantee the loading spinner and text *never* overlap. Safely delegate touch events inside custom `renderItem` methods.
-- **Absolute Customization**: Turn off default styles with `disableDefaultStyles={true}`, provide your own `renderItem`, add custom headers (like "Use Current Location"), explicitly toggle UI elements, or gain unrestricted access to `<TextInput />` and `<FlatList />` props natively.
+- **Absolute Customization**: Turn off default styles with `disableDefaultStyles={true}`, provide your own `renderItem`, or gain unrestricted access to `<TextInput />` and `<FlatList />` props natively.
 
 ---
 
@@ -45,7 +46,7 @@ export default function App() {
       <GooglePlacesAutocomplete
         ref={searchRef}
         apiKey="YOUR_GOOGLE_API_KEY"
-        fetchDetails={true} // Automatically get latitude/longitude on tap
+        fetchDetails={true} 
         
         // 🔥 Suggest places near the user automatically! 
         currentLocation={{ latitude: 40.7128, longitude: -74.0060 }}
@@ -55,7 +56,6 @@ export default function App() {
         
         onPlaceSelected={(details, prediction) => {
           console.log('Coordinates:', details?.latitude, details?.longitude);
-          console.log('Distance from User:', prediction?.distanceMeters);
           console.log('Raw Google Payload:', details?.originalData);
         }}
       />
@@ -70,7 +70,27 @@ export default function App() {
 
 ## 🎨 Advanced Customization Examples
 
-### 1. "Use Current Location" Button (Custom Header)
+### 1. Advanced Google API Filters
+Limit results to specific countries and calculate the exact distance from the user natively!
+
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_API_KEY"
+  fetchDetails={true}
+  
+  // 🔥 Only show results in the US and Canada
+  countries={['US', 'CA']}
+  
+  // 🔥 Calculate straight-line distance natively
+  origin={{ latitude: 40.7128, longitude: -74.0060 }}
+  
+  onPlaceSelected={(details, prediction) => {
+    console.log('Distance from Origin:', prediction?.distanceMeters);
+  }}
+/>
+```
+
+### 2. "Use Current Location" Button (Custom Header)
 By using `renderHeaderComponent` along with `headerComponentPlacement="outsideList"`, you can permanently place a static button directly beneath the search input, unaffected by whether the search results list is open or closed.
 
 ```tsx
@@ -85,7 +105,7 @@ By using `renderHeaderComponent` along with `headerComponentPlacement="outsideLi
 />
 ```
 
-### 2. Custom Item Render (Safe Touch Delegation)
+### 3. Custom Item Render (Safe Touch Delegation)
 When using `renderItem`, we pass an `onSelect` callback. Bind this to your own `Pressable` or `TouchableOpacity` to seamlessly trigger the internal detail-fetching loop!
 
 ```tsx
@@ -100,7 +120,7 @@ When using `renderItem`, we pass an `onSelect` callback. Bind this to your own `
 />
 ```
 
-### 3. Complete Style Override (Blank Slate)
+### 4. Complete Style Override (Blank Slate)
 Don't want to fight default paddings or border radii? Pass `disableDefaultStyles={true}` to wipe all internal styling and build your component from scratch.
 
 ```tsx
@@ -135,37 +155,58 @@ Gain total imperative control over the search bar by attaching a `ref` to the co
 
 ## ⚙️ Props API Reference
 
-### 🌐 Google API Configuration
+### 🌐 Core Google API Configuration
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `apiKey` | `string` | **Required** | Your Google Maps API Key. |
 | `isNewPlaces` | `boolean` | `true` | Use New Places API v1 (`true`) or Legacy API (`false`). |
-| `currentLocation` | `{ latitude, longitude }` | `undefined` | Passes device coordinates to Google to prioritize nearby places. |
-| `locationRadius` | `number` | `50000` | The search bias radius in meters around the `currentLocation`. |
 | `fetchDetails` | `boolean` | `false` | Automatically fetches coordinates and full details when an item is tapped. |
 | `detailsFields`| `string \| string[]`| *Auto* | Exact fields to fetch during Place Details to reduce API costs (e.g. `['id', 'location']`). |
-| `types` | `string \| string[]`| `undefined`| Restricts results. Maps to `types` (Legacy) or `includedPrimaryTypes` (New API). |
 | `debounce` | `number` | `400` | Milliseconds to wait after the user stops typing before calling the API. |
 | `minLength` | `number` | `2` | Minimum characters needed to trigger a search request. |
 | `enableCache` | `boolean` | `true` | Caches results in-memory to prevent duplicate network calls. |
 | `autocompleteProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Autocomplete API. |
 | `detailsProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Details API. |
 
-### 🛠️ Behavior & Component Toggles
+### 🌍 Google Advanced Features (Unified for Both APIs)
+This package intelligently maps the following props to the correct URL variables depending on whether `isNewPlaces` is true or false.
+
+| Prop | Type | Description |
+|---|---|---|
+| `types` | `string \| string[]` | Restricts results. Maps to `types` (Legacy) or `includedPrimaryTypes` (New API). |
+| `countries` | `string \| string[]` | Restricts results. Maps to `components=country:XX` (Legacy) or `includedRegionCodes` (New API). |
+| `origin` | `{ latitude, longitude }` | Calculates straight-line distance to this origin (`distanceMeters`). |
+| `offset` | `number` | The position, in the input term, of the last character that the service uses to match. |
+| `language` | `string` | Language code to return results in (e.g., `'en'`, `'fr'`). |
+| `region` | `string` | Region code to bias results towards (e.g., `'us'`, `'gb'`). |
+| **`currentLocation`** | `{ latitude, longitude }` | **Soft Limit**: Prioritizes nearby places natively. |
+| **`locationRestriction`**| `{ latitude, longitude }`| **Hard Limit**: STRICTLY limits results to this location. (Applies `strictbounds=true` in Legacy). |
+| `locationRadius` | `number` | The radius in meters to use for `currentLocation` or `locationRestriction`. Default: `50000`. |
+
+### 🏛️ Legacy API ONLY Features
+These props are solely passed when `isNewPlaces={false}`.
+| Prop | Type | Description |
+|---|---|---|
+| `reviewsNoTranslations` | `boolean` | (Details API) Specify whether to disable translation of reviews. |
+| `reviewsSort` | `'most_relevant' \| 'newest'`| (Details API) Sorting method for reviews. |
+| `locationBias` | `string` | Raw string override for the legacy location parameter. |
+| `radius` | `number` | Raw integer override for the legacy radius parameter. |
+
+### 🛠️ Behavior & Layout
 | Prop | Type | Default | Description |
 |---|---|---|---|
 | `listMode` | `'flat' \| 'floating'` | `'flat'` | `'floating'` renders an absolute dropdown. `'flat'` renders inline taking flex space. |
-| `loaderPlacement`| `'input' \| 'list' \| 'both'`| `'input'` | Where to show the search loading ActivityIndicator. |
-| `headerComponentPlacement` | `'insideList' \| 'outsideList'` | `'insideList'` | Dictates if `renderHeaderComponent` is permanently visible below input (`outsideList`), or only renders inside the dropdown (`insideList`). |
+| `loaderPlacement`| `'input' \| 'list' \| 'both'`| `'input'` | Where to show the loading ActivityIndicator. |
+| `headerComponentPlacement`| `'insideList' \| 'outsideList'`| `'insideList'`| Dictates if `renderHeaderComponent` is permanently visible below input (`outsideList`), or only inside the dropdown (`insideList`). |
 | `showClearButton`| `boolean` | `true` | Displays the clear (✕) button inside the input when text is present. |
-| `showEmptyComponent`| `boolean` | `true` | Toggles the rendering of the "No results found" component when the list is empty. |
-| `showSeparator` | `boolean` | `true` | Toggles the rendering of the divider lines between list items. |
-| `showListLoader`| `boolean` | `true` | Toggles the rendering of the ActivityIndicator inside the list area. |
 | `setQueryOnSelect`| `boolean` | `true` | Auto-updates the text input with the selected place's description. |
-| `blurOnSelect` | `boolean` | `true` | Removes focus and dismisses the keyboard automatically after selection. |
-| `keepResultsAfterBlur`| `boolean` | `false` | Prediction list remains visible on screen even after an item is selected or input is blurred. |
 | `showLoaderDuringDetailsFetch`| `boolean`| `true` | Shows the input loader visually while `fetchDetails` is running. |
 | `renderListInitially`| `boolean` | `false` | Shows the empty list or cached results immediately on component mount. |
+| `keepResultsAfterBlur`| `boolean` | `false` | Prediction list remains visible on screen even after the TextInput loses focus. |
+| `blurOnSelect`| `boolean` | `true` | TextInput loses focus when a prediction item is selected. |
+| `showEmptyComponent`| `boolean` | `true` | Toggles the rendering of the "No results found" component. |
+| `showSeparator`| `boolean` | `true` | Toggles the rendering of the divider lines between list items. |
+| `showListLoader`| `boolean` | `true` | Toggles the rendering of the ActivityIndicator inside the list area. |
 | `keyboardShouldPersistTaps`| `string` | `'handled'`| Determines when the keyboard should close when tapping on the prediction list. |
 
 ### 🎨 Render Overrides
@@ -180,6 +221,7 @@ Replace any piece of the UI with your own components.
 | `renderEmptyComponent`| `() => ReactElement`| Rendered when a search yields 0 results. |
 | `renderSeparator` | `() => ReactElement`| The divider line between list items. |
 | `renderClearButton` | `({ onPress }) => ReactElement`| Overrides the Clear (✕) button. |
+| `disableDefaultStyles`| `boolean \| Object`| Pass `true` to wipe ALL default styling, or an object (e.g. `{ input: true }`) to pick and choose. |
 
 ### ⚡ Lifecycle Events
 | Prop | Signature | Description |
@@ -218,7 +260,6 @@ Replace any piece of the UI with your own components.
 | `listLoaderColor` | `string` | Color of the list ActivityIndicator. Default: `'#888'`. |
 | `textInputProps` | `TextInputProps` | **Absolute Escape Hatch:** Pass ANY native TextInput prop (`autoFocus`, `maxLength`). |
 | `flatListProps` | `FlatListProps` | **Absolute Escape Hatch:** Pass ANY native FlatList prop (`onEndReached`, `showsVerticalScrollIndicator`). |
-
 ---
 
 ## 🧩 Data Models
@@ -230,7 +271,7 @@ interface PlacePrediction {
   description: string;
   primaryText: string;
   secondaryText: string;
-  distanceMeters?: number; // New API specific
+  distanceMeters?: number; // New API specific (Or Legacy if origin is provided)
   types?: string[];
   originalData: Record<string, unknown>; // 100% of the raw JSON from Google Autocomplete
 }
@@ -275,8 +316,7 @@ const {
   error, 
   fetchPlaceDetails, 
   clearResults,
-  resetSession,
-  getSessionToken
+  resetSession 
 } = usePlacesAutocomplete({ apiKey: 'YOUR_API_KEY', isNewPlaces: true });
 ```
 
@@ -302,3 +342,4 @@ If you find this project helpful, please consider supporting it:
 </a>  
 
 Thank you for your support! 🙏
+```
