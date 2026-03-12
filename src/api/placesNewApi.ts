@@ -21,6 +21,19 @@ export const fetchNewAutocomplete = async (
       : [options.types];
   }
 
+  // 🔥 NEW: Apply Location Biasing for API V1
+  if (options.currentLocation) {
+    body.locationBias = {
+      circle: {
+        center: {
+          latitude: options.currentLocation.latitude,
+          longitude: options.currentLocation.longitude,
+        },
+        radius: options.locationRadius || 50000.0,
+      },
+    };
+  }
+
   const baseUrl =
     options.autocompleteProxyUrl ||
     'https://places.googleapis.com/v1/places:autocomplete';
@@ -62,18 +75,14 @@ export const fetchNewDetails = async (
       : options.detailsFields
     : defaultFieldMask;
 
-  const headers = {
-    'X-Goog-Api-Key': apiKey,
-    'X-Goog-FieldMask': fieldMask,
-  };
-
+  const headers = { 'X-Goog-Api-Key': apiKey, 'X-Goog-FieldMask': fieldMask };
   const baseUrl =
     options.detailsProxyUrl ||
     `https://places.googleapis.com/v1/places/${placeId}`;
+
   const res = await fetch(`${baseUrl}?sessionToken=${sessionToken}`, {
     headers,
   });
-
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
 

@@ -15,15 +15,28 @@ export const fetchLegacyAutocomplete = async (
     input: query,
     key: apiKey,
     sessiontoken: sessionToken,
-    ...(options.language && { language: options.language }),
-    ...(options.region && { region: options.region }),
   });
+
+  if (options.language) params.append('language', options.language);
+  if (options.region) params.append('region', options.region);
 
   if (options.types) {
     const typesStr = Array.isArray(options.types)
       ? options.types.join('|')
       : options.types;
     params.append('types', typesStr);
+  }
+
+  // 🔥 NEW: Apply Location Biasing
+  if (options.currentLocation) {
+    params.append(
+      'location',
+      `${options.currentLocation.latitude},${options.currentLocation.longitude}`
+    );
+    params.append('radius', (options.locationRadius || 50000).toString());
+  } else if (options.locationBias) {
+    params.append('location', options.locationBias);
+    if (options.radius) params.append('radius', options.radius.toString());
   }
 
   const baseUrl =

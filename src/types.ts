@@ -63,10 +63,15 @@ export interface PlaceDetails {
   originalData: Record<string, unknown>;
 }
 
+export interface LocationCoordinate {
+  latitude: number;
+  longitude: number;
+}
+
 export interface PlacesHookOptions {
   /** Your Google Maps API Key. Required to make network requests. */
   apiKey: string;
-  /** If true, uses the newer, modern Google Places API v1 instead of the Legacy API. */
+  /** If true, uses the newer, modern Google Places API v1 instead of the Legacy API. Default is true. */
   isNewPlaces?: boolean;
   /** Milliseconds to wait after the user stops typing before making a network request. Default is 400. */
   debounce?: number;
@@ -80,9 +85,17 @@ export interface PlacesHookOptions {
   types?: string | string[];
   /** Define exactly which fields to fetch during Place Details to reduce API cost. e.g., ['id', 'location'] */
   detailsFields?: string | string[];
-  /** A location bias parameter to prefer results near a certain area. */
+  /** Pass the user's current coordinates to prioritize nearby places in the search results. */
+  currentLocation?: LocationCoordinate;
+  /** The radius (in meters) around the `currentLocation` to bias results. Default is 50000 (50km). */
+  locationRadius?: number;
+  /** Advanced: Location bias parameter to prefer results near a certain area.
+   * Accepts a raw location bias string (legacy) if you don't want to use `currentLocation`.
+   * */
   locationBias?: string;
-  /** The radius in meters to bias results around the location (Legacy API primarily). */
+  /** Advanced: Radius in meters to bias results around the location (Legacy API).
+   * Accepts a raw radius parameter.
+   * */
   radius?: number;
   /** Caches results in-memory to prevent duplicate network calls. Default is true. */
   enableCache?: boolean;
@@ -183,8 +196,22 @@ export interface PlacesComponentProps extends PlacesHookOptions {
   setQueryOnSelect?: boolean;
   /** If true, automatically removes focus and dismisses the keyboard after a place is selected. Default is true. */
   blurOnSelect?: boolean;
-  /** If true, automatically shows the input loader while `fetchDetails` is running. Default is true. */
+  /** If true, automatically shows the input loader while `fetchDetails` is running.
+   * Default is true.
+   * */
   showLoaderDuringDetailsFetch?: boolean;
+  /** Set to false to hide the "No results found" component.
+   * Default is true.
+   * */
+  showEmptyComponent?: boolean;
+  /** Set to false to hide the divider lines between list items.
+   * Default is true.
+   * */
+  showSeparator?: boolean;
+  /** Set to false to hide the ActivityIndicator inside the list area.
+   * Default is true.
+   * */
+  showListLoader?: boolean;
 
   /** Triggered when a place is tapped. Includes full details if `fetchDetails` is true, otherwise null. */
   onPlaceSelected?: (
@@ -199,11 +226,19 @@ export interface PlacesComponentProps extends PlacesHookOptions {
 
   /** Pass `true` to instantly disable ALL default library styles, or pass an object to pick and choose. */
   disableDefaultStyles?: boolean | DisableDefaultStyles;
+  /**
+   *  Determines where the custom header component is rendered.
+   * 'insideList': Renders inside the dropdown/list container (only visible when list is shown).
+   * 'outsideList': Renders below the input but outside the list container (always visible).
+   */
+  headerComponentPlacement?: 'insideList' | 'outsideList';
 
+  /** Render a custom component immediately below the input, above the list and list loader */
+  renderHeaderComponent?: () => React.ReactElement | undefined;
   /** Completely overrides the default TextInput component. */
   renderInput?: (props: RenderInputProps) => React.ReactElement | undefined;
   /** Completely overrides the design of the individual prediction list items. */
-  renderItem?: (props: RenderItemProps) => React.ReactElement | undefined;
+  renderItem?: (props: RenderItemProps) => React.ReactElement;
   /** Completely overrides the default ActivityIndicator loading component shown inside the TextInput. */
   renderInputLoader?: () => React.ReactElement | undefined;
   /** Completely overrides the default ActivityIndicator loading component shown in the List dropdown. */
@@ -239,11 +274,22 @@ export interface PlacesComponentProps extends PlacesHookOptions {
   listItemStyle?: StyleProp<ViewStyle>;
   /** Custom style applied to the primary text of the default prediction list item. */
   listItemTextStyle?: StyleProp<TextStyle>;
-
+  /** Custom style applied to the ActivityIndicator displayed inside the TextInput */
+  inputLoaderStyle?: StyleProp<ViewStyle>;
+  /** Custom style applied to the ItemSeparatorComponent of the FlatList. */
+  itemSeperatorStyle?: StyleProp<ViewStyle>;
+  /** Custom style applied to the ActivityIndicator in the list loader. */
+  listLoaderStyle?: StyleProp<ViewStyle>;
+  /** Custom style applied to the text of the ListEmptyComponent. */
+  listEmptyTextStyle?: StyleProp<TextStyle>;
   /** Size of the ActivityIndicator inside the input. Default is 'small'. */
   inputLoaderSize?: number | 'small' | 'large' | undefined;
   /** Color of the ActivityIndicator inside the input. Default is '#888'. */
   inputLoaderColor?: string;
+  /** Size of the ActivityIndicator in the list. Default is 'large'. */
+  listLoaderSize?: number | 'small' | 'large' | undefined;
+  /** Color of the ActivityIndicator in the list. Default is '#888'. */
+  listLoaderColor?: string;
 
   /** Absolute unrestricted access to pass any native TextInput props (e.g. autoFocus, secureTextEntry). */
   textInputProps?: Omit<TextInputProps, 'value' | 'onChangeText'>;

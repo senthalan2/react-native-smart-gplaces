@@ -17,18 +17,21 @@ import { Cache } from '../utils/cache';
 export const usePlacesAutocomplete = (
   options: PlacesHookOptions
 ): UsePlacesAutocompleteReturn => {
-  const optionsRef = useRef(options);
+  // 🔥 Automatically default isNewPlaces to true for headless hook usage
+  const getMergedOptions = (opts: PlacesHookOptions) => ({
+    isNewPlaces: true,
+    ...opts,
+  });
+  const optionsRef = useRef(getMergedOptions(options));
 
   useEffect(() => {
-    optionsRef.current = options;
+    optionsRef.current = getMergedOptions(options);
   }, [options]);
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PlacePrediction[]>([]);
-
   const [loading, setLoading] = useState(false);
   const [fetchingDetails, setFetchingDetails] = useState(false);
-
   const [error, setError] = useState<string | null>(null);
 
   const sessionTokenRef = useRef(generateSessionToken());
@@ -40,9 +43,8 @@ export const usePlacesAutocomplete = (
 
   const updateResults = useCallback((data: PlacePrediction[]) => {
     setResults(data);
-    if (optionsRef.current.onListLengthChange) {
+    if (optionsRef.current.onListLengthChange)
       optionsRef.current.onListLengthChange(data.length);
-    }
   }, []);
 
   const searchPlaces = useCallback(
@@ -54,7 +56,11 @@ export const usePlacesAutocomplete = (
         return;
       }
 
-      const cacheKey = `${currentOptions.isNewPlaces ? 'new' : 'legacy'}_${searchQuery}`;
+      const coordsStr = currentOptions.currentLocation
+        ? `${currentOptions.currentLocation.latitude},${currentOptions.currentLocation.longitude}`
+        : 'none';
+      const cacheKey = `${currentOptions.isNewPlaces ? 'new' : 'legacy'}_${coordsStr}_${searchQuery}`;
+
       if (currentOptions.enableCache ?? true) {
         const cached = Cache.get(cacheKey);
         if (cached) {

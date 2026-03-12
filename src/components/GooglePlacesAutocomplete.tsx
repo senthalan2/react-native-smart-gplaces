@@ -40,7 +40,12 @@ export const GooglePlacesAutocomplete = forwardRef<
     listLoaderContainerStyle,
     listItemStyle,
     listItemTextStyle,
+    inputLoaderStyle,
+    itemSeperatorStyle,
+    listLoaderStyle,
+    listEmptyTextStyle,
 
+    renderHeaderComponent,
     renderInput,
     renderItem,
     renderInputLoader,
@@ -60,16 +65,27 @@ export const GooglePlacesAutocomplete = forwardRef<
 
     showClearButton = true,
     setQueryOnSelect = true,
-    blurOnSelect = true, // 🔥 Defaults to true for UX
+    blurOnSelect = true,
     showLoaderDuringDetailsFetch = true,
+    showEmptyComponent = true,
+    showSeparator = true,
+    showListLoader = true,
+
+    headerComponentPlacement = 'insideList',
+
+    // 🔥 Default isNewPlaces to true for the component out-of-the-box
+    isNewPlaces = true,
 
     inputLoaderSize = 'small',
     inputLoaderColor = '#888',
+    listLoaderSize = 'large',
+    listLoaderColor = '#888',
     disableDefaultStyles = false,
     textInputProps,
     flatListProps,
   } = props;
 
+  const hookOptions = { ...props, isNewPlaces };
   const {
     query,
     setQuery,
@@ -79,7 +95,8 @@ export const GooglePlacesAutocomplete = forwardRef<
     fetchPlaceDetails,
     clearResults,
     getSessionToken,
-  } = usePlacesAutocomplete(props);
+  } = usePlacesAutocomplete(hookOptions);
+
   const [listVisible, setListVisible] = useState(!!renderListInitially);
 
   const textInputRef = useRef<React.ElementRef<typeof TextInput>>(null);
@@ -123,13 +140,11 @@ export const GooglePlacesAutocomplete = forwardRef<
     setQuery(text);
     setListVisible(true);
   };
-
   const handleFocus = (e: TextInputFocusEvent) => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
     setListVisible(true);
     if (textInputProps?.onFocus) textInputProps.onFocus(e);
   };
-
   const handleBlur = (e: TextInputFocusEvent) => {
     if (!keepResultsAfterBlur) {
       blurTimeout.current = setTimeout(() => {
@@ -139,34 +154,23 @@ export const GooglePlacesAutocomplete = forwardRef<
     }
     if (textInputProps?.onBlur) textInputProps.onBlur(e);
   };
-
   const handleClear = () => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
     setQuery('');
     clearResults();
-    if (!renderListInitially) {
-      setListVisible(false);
-    }
+    if (!renderListInitially) setListVisible(false);
     textInputRef.current?.clear();
   };
 
   const handleSelect = async (item: PlacePrediction) => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
+    if (setQueryOnSelect) setQuery(item.description);
 
-    if (setQueryOnSelect) {
-      setQuery(item.description);
-    }
-
-    // 🔥 FIX: We now explicitly respect keepResultsAfterBlur upon Selection!
     if (!keepResultsAfterBlur && blurOnSelect) {
       setListVisible(false);
       clearResults();
     }
-
-    // 🔥 FIX: We blur the input based on the new blurOnSelect prop
-    if (blurOnSelect) {
-      textInputRef.current?.blur();
-    }
+    if (blurOnSelect) textInputRef.current?.blur();
 
     if (fetchDetails && onPlaceSelected) {
       try {
@@ -205,15 +209,15 @@ export const GooglePlacesAutocomplete = forwardRef<
 
   const showList =
     listVisible && (query.length >= minLength || renderListInitially);
-
   const isSearchLoadingInput =
     loading && (loaderPlacement === 'input' || loaderPlacement === 'both');
   const isDetailsLoadingInput = fetchingDetails && showLoaderDuringDetailsFetch;
 
   const showInputLoaderUI = isSearchLoadingInput || isDetailsLoadingInput;
   const showListLoaderUI =
-    loading && (loaderPlacement === 'list' || loaderPlacement === 'both');
-
+    loading &&
+    showListLoader &&
+    (loaderPlacement === 'list' || loaderPlacement === 'both');
   const shouldShowClearButton =
     showClearButton && !showInputLoaderUI && query.length > 0;
 
@@ -260,7 +264,10 @@ export const GooglePlacesAutocomplete = forwardRef<
             renderInputLoader()
           ) : (
             <ActivityIndicator
-              style={[!isStyleDisabled('loaderInput') && styles.loaderInput]}
+              style={[
+                !isStyleDisabled('loaderInput') && styles.loaderInput,
+                inputLoaderStyle,
+              ]}
               size={inputLoaderSize}
               color={inputLoaderColor}
             />
@@ -289,6 +296,10 @@ export const GooglePlacesAutocomplete = forwardRef<
         ) : null}
       </View>
 
+      {headerComponentPlacement === 'outsideList' &&
+        renderHeaderComponent &&
+        renderHeaderComponent()}
+
       {showList && (
         <View
           style={[
@@ -302,6 +313,10 @@ export const GooglePlacesAutocomplete = forwardRef<
             listContainerStyle,
           ]}
         >
+          {headerComponentPlacement === 'insideList' &&
+            renderHeaderComponent &&
+            renderHeaderComponent()}
+
           {showListLoaderUI ? (
             <View
               style={[
@@ -313,7 +328,11 @@ export const GooglePlacesAutocomplete = forwardRef<
               {renderListLoader ? (
                 renderListLoader()
               ) : (
-                <ActivityIndicator size="large" color="#888" />
+                <ActivityIndicator
+                  size={listLoaderSize}
+                  color={listLoaderColor}
+                  style={listLoaderStyle}
+                />
               )}
             </View>
           ) : (
@@ -334,19 +353,29 @@ export const GooglePlacesAutocomplete = forwardRef<
                 )
               }
               ItemSeparatorComponent={
-                renderSeparator ||
-                (() => (
-                  <View
-                    style={[!isStyleDisabled('separator') && styles.separator]}
-                  />
-                ))
+                showSeparator
+                  ? renderSeparator ||
+                    (() => (
+                      <View
+                        style={[
+                          !isStyleDisabled('separator') && styles.separator,
+                          itemSeperatorStyle,
+                        ]}
+                      />
+                    ))
+                  : undefined
               }
               ListEmptyComponent={
-                !loading ? (
+                !loading && showEmptyComponent ? (
                   renderEmptyComponent ? (
                     renderEmptyComponent()
                   ) : (
-                    <Text style={[!isStyleDisabled('empty') && styles.empty]}>
+                    <Text
+                      style={[
+                        !isStyleDisabled('empty') && styles.empty,
+                        listEmptyTextStyle,
+                      ]}
+                    >
                       No results found.
                     </Text>
                   )
@@ -361,7 +390,6 @@ export const GooglePlacesAutocomplete = forwardRef<
   );
 });
 
-// 💅 Master Layout Styles
 const styles = StyleSheet.create({
   container: { zIndex: 1, width: '100%' },
   containerFlat: { flex: 1 },
