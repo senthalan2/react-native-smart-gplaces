@@ -228,12 +228,12 @@ These props are solely passed when `isNewPlaces={false}`.
 Replace any piece of the UI with your own components.
 | Prop | Signature | Description |
 |---|---|---|
-| `renderHeaderComponent`| `(state) => ReactElement`| Render a custom component below the input (e.g. "Use Current Location"). state includes { query, listLength, isLoading, error }. |
+| `renderHeaderComponent`| `(state) => ReactElement`| Render a custom component below the input (e.g. "Use Current Location"). state includes { query, listLength, isLoading, isTyping, error }. |
 | `renderItem` | `({ item, onSelect }) => ReactElement`| Overrides the prediction list item. *Call `onSelect` when tapped!* |
 | `renderInput` | `({ value, onChangeText, onFocus, onBlur, onClear }) => ReactElement`| Completely overrides the TextInput. |
 | `renderInputLoader` | `() => ReactElement`| Overrides the ActivityIndicator shown *inside* the TextInput. |
 | `renderListLoader` | `() => ReactElement`| Overrides the ActivityIndicator shown in the dropdown list area. |
-| `renderEmptyComponent`| `(state) => ReactElement`| Rendered when a search yields 0 results. state includes { query, listLength, isLoading, error }. |
+| `renderEmptyComponent`| `(state) => ReactElement`| Rendered when a search yields 0 results. state includes { query, listLength, isLoading, isTyping, error }. |
 | `renderSeparator` | `() => ReactElement`| The divider line between list items. |
 | `renderClearButton` | `({ onPress }) => ReactElement`| Overrides the Clear (✕) button. |
 | `disableDefaultStyles`| `boolean \| Object`| Pass `true` to wipe ALL default styling, or an object (e.g. `{ input: true }`) to pick and choose. |
