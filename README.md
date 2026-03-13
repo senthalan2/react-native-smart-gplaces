@@ -133,6 +133,21 @@ Don't want to fight default paddings or border radii? Pass `disableDefaultStyles
 />
 ```
 
+### 5. Dynamic Empty State (Using State Props)
+Because `renderEmptyComponent` and `renderHeaderComponent` receive the current state, you can show dynamic messages like "Type at least 3 characters..." or "No results for 'XYZ'".
+
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_API_KEY"
+  renderEmptyComponent={({ query, isLoading, error }) => {
+    if (error) return <Text style={{ color: 'red' }}>Error: {error}</Text>;
+    if (query.length < 2) return <Text>Type a bit more to search...</Text>;
+    if (!isLoading) return <Text>We couldn't find anything for "{query}" 😢</Text>;
+    return null;
+  }}
+/>
+```
+
 ---
 
 ## 📚 Ref Methods (`GooglePlacesAutocompleteRef`)
@@ -213,12 +228,12 @@ These props are solely passed when `isNewPlaces={false}`.
 Replace any piece of the UI with your own components.
 | Prop | Signature | Description |
 |---|---|---|
-| `renderHeaderComponent`| `() => ReactElement`| Render a custom component below the input (e.g. "Use Current Location"). |
+| `renderHeaderComponent`| `(state) => ReactElement`| Render a custom component below the input (e.g. "Use Current Location"). state includes { query, listLength, isLoading, error }. |
 | `renderItem` | `({ item, onSelect }) => ReactElement`| Overrides the prediction list item. *Call `onSelect` when tapped!* |
 | `renderInput` | `({ value, onChangeText, onFocus, onBlur, onClear }) => ReactElement`| Completely overrides the TextInput. |
 | `renderInputLoader` | `() => ReactElement`| Overrides the ActivityIndicator shown *inside* the TextInput. |
 | `renderListLoader` | `() => ReactElement`| Overrides the ActivityIndicator shown in the dropdown list area. |
-| `renderEmptyComponent`| `() => ReactElement`| Rendered when a search yields 0 results. |
+| `renderEmptyComponent`| `(state) => ReactElement`| Rendered when a search yields 0 results. state includes { query, listLength, isLoading, error }. |
 | `renderSeparator` | `() => ReactElement`| The divider line between list items. |
 | `renderClearButton` | `({ onPress }) => ReactElement`| Overrides the Clear (✕) button. |
 | `disableDefaultStyles`| `boolean \| Object`| Pass `true` to wipe ALL default styling, or an object (e.g. `{ input: true }`) to pick and choose. |
