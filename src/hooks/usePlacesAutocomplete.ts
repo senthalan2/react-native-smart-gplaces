@@ -44,7 +44,14 @@ export const usePlacesAutocomplete = (
   const setQuery = useCallback((text: string, skipSearch = false) => {
     skipSearchRef.current = skipSearch;
     setRawQuery(text);
-    if (!skipSearch) setIsTyping(true); // User is officially typing!
+
+    const minLength = optionsRef.current.minLength ?? 2;
+
+    if (!skipSearch && text.length >= minLength) {
+      setIsTyping(true); // User is typing and passed the minLength threshold
+    } else {
+      setIsTyping(false); // Instantly turn off loader if they backspace below minLength
+    }
   }, []);
 
   const resetSession = useCallback(() => {
