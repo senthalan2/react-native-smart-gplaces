@@ -95,7 +95,16 @@ export const GooglePlacesAutocomplete = forwardRef<
     fetchPlaceDetails,
     clearResults,
     getSessionToken,
+    error,
   } = usePlacesAutocomplete(hookOptions);
+
+  // Bundle the state to pass to callbacks
+  const componentState = {
+    query,
+    listLength: results.length,
+    isLoading: loading,
+    error,
+  };
 
   const [listVisible, setListVisible] = useState(!!renderListInitially);
 
@@ -298,7 +307,7 @@ export const GooglePlacesAutocomplete = forwardRef<
 
       {headerComponentPlacement === 'outsideList' &&
         renderHeaderComponent &&
-        renderHeaderComponent()}
+        renderHeaderComponent(componentState)}
 
       {showList && (
         <View
@@ -315,7 +324,7 @@ export const GooglePlacesAutocomplete = forwardRef<
         >
           {headerComponentPlacement === 'insideList' &&
             renderHeaderComponent &&
-            renderHeaderComponent()}
+            renderHeaderComponent(componentState)}
 
           {showListLoaderUI ? (
             <View
@@ -368,7 +377,7 @@ export const GooglePlacesAutocomplete = forwardRef<
               ListEmptyComponent={
                 !loading && showEmptyComponent ? (
                   renderEmptyComponent ? (
-                    renderEmptyComponent()
+                    renderEmptyComponent(componentState)
                   ) : (
                     <Text
                       style={[

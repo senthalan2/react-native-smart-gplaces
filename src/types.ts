@@ -192,6 +192,17 @@ export interface RenderItemProps {
   onSelect: () => void;
 }
 
+export interface RenderComponentState {
+  /** The current text typed in the input. */
+  query: string;
+  /** The current number of predictions in the list. */
+  listLength: number;
+  /** True if the Autocomplete API is currently fetching data. */
+  isLoading: boolean;
+  /** Contains the error message if the API call failed, otherwise null. */
+  error: string | null;
+}
+
 export interface PlacesComponentProps extends PlacesHookOptions {
   /** The placeholder text shown inside the TextInput. */
   placeholder?: string;
@@ -250,8 +261,12 @@ export interface PlacesComponentProps extends PlacesHookOptions {
    */
   headerComponentPlacement?: 'insideList' | 'outsideList';
 
-  /** Render a custom component immediately below the input, above the list and list loader */
-  renderHeaderComponent?: () => React.ReactElement | undefined;
+  /** Render a custom component immediately below the input, above the list and list loader.
+   *  Receives current search state.
+   */
+  renderHeaderComponent?: (
+    state: RenderComponentState
+  ) => React.ReactElement | undefined;
   /** Completely overrides the default TextInput component. */
   renderInput?: (props: RenderInputProps) => React.ReactElement | undefined;
   /** Completely overrides the design of the individual prediction list items. */
@@ -261,7 +276,9 @@ export interface PlacesComponentProps extends PlacesHookOptions {
   /** Completely overrides the default ActivityIndicator loading component shown in the List dropdown. */
   renderListLoader?: () => React.ReactElement | undefined;
   /** Completely overrides the UI shown when a search yields 0 results. */
-  renderEmptyComponent?: () => React.ReactElement | undefined;
+  renderEmptyComponent?: (
+    state: RenderComponentState
+  ) => React.ReactElement | undefined;
   /** Completely overrides the line separator rendered between list items. */
   renderSeparator?: () => React.ReactElement | undefined;
   /** Completely overrides the design of the Clear (✕) button inside the input. */
