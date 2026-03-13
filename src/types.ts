@@ -11,7 +11,8 @@ export type TextInputFocusEvent = Parameters<
   NonNullable<TextInputProps['onFocus']>
 >[0];
 
-export type SetQueryProp = React.Dispatch<React.SetStateAction<string>>;
+/** Custom setter function to update query and optionally skip the debounced network request */
+export type SetQueryFunctionProp = (text: string, skipSearch?: boolean) => void;
 
 export interface PlacePrediction {
   /** The unique identifier of the place returned by Google. */
@@ -199,6 +200,8 @@ export interface RenderComponentState {
   listLength: number;
   /** True if the Autocomplete API is currently fetching data. */
   isLoading: boolean;
+  /** True strictly during the debounce period (user is actively typing). */
+  isTyping: boolean;
   /** Contains the error message if the API call failed, otherwise null. */
   error: string | null;
 }
@@ -338,13 +341,15 @@ export interface UsePlacesAutocompleteReturn {
   /** The current text value typed into the search. */
   query: string;
   /** State setter function to update the search query text. */
-  setQuery: SetQueryProp;
+  setQuery: SetQueryFunctionProp;
   /** The array of place predictions returned from Google. */
   results: PlacePrediction[];
   /** Boolean indicating if the autocomplete search API is currently fetching. */
   loading: boolean;
   /** Boolean indicating if the Place Details API is currently fetching. */
   fetchingDetails: boolean;
+  /** True instantly when a user types, false when debounce ends. */
+  isTyping: boolean;
   /** A string containing the error message if a network request fails, or null. */
   error: string | null;
   /** Function to imperatively trigger a Place Details fetch for a specific placeId. */

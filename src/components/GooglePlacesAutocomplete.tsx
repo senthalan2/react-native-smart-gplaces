@@ -72,8 +72,6 @@ export const GooglePlacesAutocomplete = forwardRef<
     showListLoader = true,
 
     headerComponentPlacement = 'insideList',
-
-    // 🔥 Default isNewPlaces to true for the component out-of-the-box
     isNewPlaces = true,
 
     inputLoaderSize = 'small',
@@ -92,19 +90,12 @@ export const GooglePlacesAutocomplete = forwardRef<
     results,
     loading,
     fetchingDetails,
+    isTyping,
+    error,
     fetchPlaceDetails,
     clearResults,
     getSessionToken,
-    error,
   } = usePlacesAutocomplete(hookOptions);
-
-  // Bundle the state to pass to callbacks
-  const componentState = {
-    query,
-    listLength: results.length,
-    isLoading: loading,
-    error,
-  };
 
   const [listVisible, setListVisible] = useState(!!renderListInitially);
 
@@ -117,20 +108,30 @@ export const GooglePlacesAutocomplete = forwardRef<
     };
   }, []);
 
+  // 🔥 Create the state payload for custom renderers
+  const isSearchActive = loading || isTyping; // Represents the ENTIRE wait time (debounce + network)
+  const componentState = {
+    query,
+    listLength: results.length,
+    isLoading: isSearchActive,
+    isTyping,
+    error,
+  };
+
   useImperativeHandle(ref, () => ({
     getSessionToken: () => getSessionToken(),
     getListLength: () => results.length,
     focus: () => textInputRef.current?.focus(),
     blur: () => textInputRef.current?.blur(),
     clear: () => {
-      setQuery('');
+      setQuery('', true);
       clearResults();
       setListVisible(false);
       textInputRef.current?.clear();
     },
     getText: () => query,
     setText: (text: string) => {
-      setQuery(text);
+      setQuery(text, false);
       setListVisible(true);
     },
     isFocused: () => textInputRef.current?.isFocused() ?? false,
@@ -146,7 +147,7 @@ export const GooglePlacesAutocomplete = forwardRef<
   };
 
   const handleTextChange = (text: string) => {
-    setQuery(text);
+    setQuery(text, false);
     setListVisible(true);
   };
   const handleFocus = (e: TextInputFocusEvent) => {
@@ -163,9 +164,11 @@ export const GooglePlacesAutocomplete = forwardRef<
     }
     if (textInputProps?.onBlur) textInputProps.onBlur(e);
   };
+
+  // Skip search when clearing
   const handleClear = () => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
-    setQuery('');
+    setQuery('', true);
     clearResults();
     if (!renderListInitially) setListVisible(false);
     textInputRef.current?.clear();
@@ -173,7 +176,9 @@ export const GooglePlacesAutocomplete = forwardRef<
 
   const handleSelect = async (item: PlacePrediction) => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
-    if (setQueryOnSelect) setQuery(item.description);
+
+    // 🔥 Skip API search when simply setting text from a selection
+    if (setQueryOnSelect) setQuery(item.description, true);
 
     if (!keepResultsAfterBlur && blurOnSelect) {
       setListVisible(false);
@@ -218,13 +223,16 @@ export const GooglePlacesAutocomplete = forwardRef<
 
   const showList =
     listVisible && (query.length >= minLength || renderListInitially);
+
+  // Loaders will show instantly when the user starts typing thanks to `isSearchActive`
   const isSearchLoadingInput =
-    loading && (loaderPlacement === 'input' || loaderPlacement === 'both');
+    isSearchActive &&
+    (loaderPlacement === 'input' || loaderPlacement === 'both');
   const isDetailsLoadingInput = fetchingDetails && showLoaderDuringDetailsFetch;
 
   const showInputLoaderUI = isSearchLoadingInput || isDetailsLoadingInput;
   const showListLoaderUI =
-    loading &&
+    isSearchActive &&
     showListLoader &&
     (loaderPlacement === 'list' || loaderPlacement === 'both');
   const shouldShowClearButton =
@@ -375,7 +383,7 @@ export const GooglePlacesAutocomplete = forwardRef<
                   : undefined
               }
               ListEmptyComponent={
-                !loading && showEmptyComponent ? (
+                !isSearchActive && showEmptyComponent ? (
                   renderEmptyComponent ? (
                     renderEmptyComponent(componentState)
                   ) : (

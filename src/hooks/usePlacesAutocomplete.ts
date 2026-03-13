@@ -17,7 +17,6 @@ import { Cache } from '../utils/cache';
 export const usePlacesAutocomplete = (
   options: PlacesHookOptions
 ): UsePlacesAutocompleteReturn => {
-  // 🔥 Automatically default isNewPlaces to true for headless hook usage
   const getMergedOptions = (opts: PlacesHookOptions) => ({
     isNewPlaces: true,
     ...opts,
@@ -28,14 +27,25 @@ export const usePlacesAutocomplete = (
     optionsRef.current = getMergedOptions(options);
   }, [options]);
 
-  const [query, setQuery] = useState('');
+  const [query, setRawQuery] = useState('');
   const [results, setResults] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingDetails, setFetchingDetails] = useState(false);
+
+  // 🔥 NEW: Tracks the exact moment between a keystroke and the debounced API firing
+  const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const sessionTokenRef = useRef(generateSessionToken());
   const abortControllerRef = useRef<AbortController | null>(null);
+  const skipSearchRef = useRef(false);
+
+  // Custom setter to safely control text without firing API calls unnecessarily
+  const setQuery = useCallback((text: string, skipSearch = false) => {
+    skipSearchRef.current = skipSearch;
+    setRawQuery(text);
+    if (!skipSearch) setIsTyping(true); // User is officially typing!
+  }, []);
 
   const resetSession = useCallback(() => {
     sessionTokenRef.current = generateSessionToken();
@@ -49,6 +59,8 @@ export const usePlacesAutocomplete = (
 
   const searchPlaces = useCallback(
     async (searchQuery: string) => {
+      setIsTyping(false); // 🔥 Debounce finished. We are no longer "typing", we are "fetching".
+
       const currentOptions = optionsRef.current;
 
       if (searchQuery.length < (currentOptions.minLength || 2)) {
@@ -111,6 +123,10 @@ export const usePlacesAutocomplete = (
   const debouncedSearch = useDebounce(searchPlaces, options.debounce || 400);
 
   useEffect(() => {
+    if (skipSearchRef.current) {
+      skipSearchRef.current = false;
+      return;
+    }
     debouncedSearch(query);
   }, [query, debouncedSearch]);
 
@@ -150,6 +166,7 @@ export const usePlacesAutocomplete = (
     results,
     loading,
     fetchingDetails,
+    isTyping,
     error,
     fetchPlaceDetails,
     clearResults: () => updateResults([]),
