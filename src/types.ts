@@ -362,6 +362,32 @@ export interface UsePlacesAutocompleteReturn {
   getSessionToken: () => string;
 }
 
+export interface TimeZoneResult {
+  /** The IANA timezone ID (e.g., "America/New_York"). */
+  timeZoneId: string;
+  /** The long-form timezone name (e.g., "Eastern Daylight Time"). */
+  timeZoneName: string;
+  /** The offset in seconds from UTC for DST. 0 when DST is not in effect. */
+  dstOffset: number;
+  /** The offset in seconds from UTC, excluding DST. */
+  rawOffset: number;
+  /** Combined UTC offset in seconds: rawOffset + dstOffset. */
+  utcOffset: number;
+  /** 100% of the raw, unadulterated JSON response from Google Timezone API. */
+  originalData: Record<string, unknown>;
+}
+
+export interface TimeZoneOptions {
+  /** Your Google Maps API Key. */
+  apiKey: string;
+  /** Unix timestamp (seconds). Defaults to current time. Used to determine DST accuracy. */
+  timestamp?: number;
+  /** The language in which to return results (e.g., 'en', 'fr'). */
+  language?: string;
+  /** CORS bypass proxy URL for the Timezone API (useful for Expo Web). */
+  proxyUrl?: string;
+}
+
 export interface GooglePlacesAutocompleteRef {
   /** Get the UUID currently being used to link searches for Google billing. */
   getSessionToken: () => string;

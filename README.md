@@ -1,6 +1,6 @@
 # React Native Smart Places 🌍
 
-An enterprise-grade, dependency-free, perfectly typed, and fully customizable React Native component for the **Google Places API**.
+An enterprise-grade, dependency-free, perfectly typed, and fully customizable React Native component for the **Google Places API** — with built-in support for the **Google Timezone API**.
 
 [![npm version](https://img.shields.io/npm/v/react-native-smart-gplaces.svg)](https://npmjs.com/package/react-native-smart-gplaces)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
@@ -8,7 +8,8 @@ An enterprise-grade, dependency-free, perfectly typed, and fully customizable Re
 
 ## ✨ Why this library?
 
-- **Fully Featured Google Integrations**: Supports *every* available parameter Google offers, seamlessly bridging the gap between APIs via unified props (e.g., `countries`, `origin`, `locationRestriction`).
+- **Fully Featured Google Integrations**: Supports *every* available parameter Google offers, seamlessly bridging the gap between APIs via unified props (e.g., `countries`, `origin`, `locationRestriction`). Includes a standalone **Timezone API** utility to resolve timezone data from coordinates.
+
 - **Modern by Default**: Uses the latest, recommended **Google Places API (v1)** out-of-the-box (Legacy API is fully supported if needed).
 - **Nearby Places Bias**: Prioritize local search results effortlessly by passing device coordinates via the `currentLocation` prop!
 - **Cost Optimized**: Automatically handles UUID Session Tokens, Input Debouncing, Memory Caching, and Request Cancellations (`AbortController`) to drastically reduce your Google Cloud billing.
@@ -333,6 +334,95 @@ const {
   clearResults,
   resetSession 
 } = usePlacesAutocomplete({ apiKey: 'YOUR_API_KEY', isNewPlaces: true });
+```
+
+---
+
+## 🕐 Timezone API (`fetchTimeZone`)
+
+A standalone utility function that resolves the timezone for any latitude/longitude coordinate using the [Google Timezone API](https://developers.google.com/maps/documentation/timezone/overview). Pair it with `onPlaceSelected` to instantly get the local timezone of any selected place.
+
+### Basic Usage
+
+```tsx
+import { fetchTimeZone } from 'react-native-smart-gplaces';
+
+const timezone = await fetchTimeZone(40.7128, -74.006, {
+  apiKey: 'YOUR_GOOGLE_API_KEY',
+});
+
+console.log(timezone.timeZoneId);   // "America/New_York"
+console.log(timezone.timeZoneName); // "Eastern Daylight Time"
+console.log(timezone.utcOffset);    // -14400 (seconds)
+```
+
+### Paired with `onPlaceSelected`
+
+```tsx
+import { GooglePlacesAutocomplete, fetchTimeZone } from 'react-native-smart-gplaces';
+
+<GooglePlacesAutocomplete
+  apiKey="YOUR_GOOGLE_API_KEY"
+  fetchDetails={true}
+  onPlaceSelected={async (details) => {
+    if (!details?.latitude || !details?.longitude) return;
+
+    const timezone = await fetchTimeZone(details.latitude, details.longitude, {
+      apiKey: 'YOUR_GOOGLE_API_KEY',
+    });
+
+    console.log('Place timezone:', timezone.timeZoneId);
+    // e.g. "Europe/London"
+  }}
+/>
+```
+
+### With Request Cancellation
+
+```tsx
+const controller = new AbortController();
+
+const timezone = await fetchTimeZone(51.5074, -0.1278, {
+  apiKey: 'YOUR_GOOGLE_API_KEY',
+  language: 'fr',           // Return timezone name in French
+  timestamp: 1700000000,    // Unix timestamp for DST accuracy (defaults to now)
+}, controller.signal);
+
+// Cancel if needed:
+controller.abort();
+```
+
+### Function Signature
+
+```typescript
+fetchTimeZone(
+  latitude: number,
+  longitude: number,
+  options: TimeZoneOptions,
+  signal?: AbortSignal
+): Promise<TimeZoneResult>
+```
+
+### `TimeZoneOptions`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `apiKey` | `string` | **Required** | Your Google Maps API Key. Must have Timezone API enabled. |
+| `timestamp` | `number` | `Date.now() / 1000` | Unix timestamp (seconds) used to determine DST accuracy. |
+| `language` | `string` | `undefined` | Language code for the returned `timeZoneName` (e.g. `'en'`, `'fr'`). |
+| `proxyUrl` | `string` | `undefined` | CORS bypass proxy URL for the Timezone API (useful for Expo Web). |
+
+### `TimeZoneResult`
+
+```typescript
+interface TimeZoneResult {
+  timeZoneId: string;    // IANA timezone ID — e.g. "America/New_York"
+  timeZoneName: string;  // Long-form name — e.g. "Eastern Daylight Time"
+  dstOffset: number;     // DST offset in seconds (0 when DST is not in effect)
+  rawOffset: number;     // Base UTC offset in seconds (excluding DST)
+  utcOffset: number;     // Combined UTC offset: rawOffset + dstOffset
+  originalData: Record<string, unknown>; // 100% of the raw JSON from Google
+}
 ```
 
 ---
