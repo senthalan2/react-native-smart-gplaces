@@ -137,11 +137,20 @@ declare module 'react-native-smart-gplaces' {
     onListLengthChange?: (length: number) => void;
     /** Triggered when an error occurs during the autocomplete search API call. */
     onError?: (error: string) => void;
-
     /** Triggered when starting to fetch full place details. Passes the placeId. */
     onStartFetchingDetails?: (placeId: string) => void;
     /** Triggered if an error occurs while fetching full place details. */
     onErrorFetchingDetails?: (error: string) => void;
+    /** Triggered when starting to fetch timezone for a selected place. */
+    onStartFetchingTimeZone?: () => void;
+    /** Triggered if an error occurs while fetching timezone. */
+    onErrorFetchingTimeZone?: (error: string) => void;
+    /** Language code for the timezone name (e.g., 'en', 'fr'). Falls back to the `language` prop if not set. */
+    timezoneLanguage?: string;
+    /** CORS bypass proxy URL for the Timezone API (useful for Expo Web). */
+    timezoneProxyUrl?: string;
+    /** Caches timezone results in-memory by coordinates. Default is true. */
+    enableTimezoneCache?: boolean;
   }
 
   export interface DisableDefaultStyles {
@@ -215,6 +224,8 @@ declare module 'react-native-smart-gplaces' {
     placeholder?: string;
     /** If true, automatically fetches Place Details (coordinates, etc.) when a user taps a prediction. */
     fetchDetails?: boolean;
+    /** If true, fetches the timezone for the selected place after details are resolved. Requires fetchDetails={true}. Default is false. */
+    fetchTimeZone?: boolean;
     /** If true, shows the empty list or cached results immediately on component mount without requiring input. */
     renderListInitially?: boolean;
     /**
@@ -235,6 +246,8 @@ declare module 'react-native-smart-gplaces' {
      * Default is true.
      * */
     showLoaderDuringDetailsFetch?: boolean;
+    /** If true, automatically shows the input loader while `fetchTimeZone` is running. Default is true. */
+    showLoaderDuringTimeZoneFetch?: boolean;
     /** Set to false to hide the "No results found" component.
      * Default is true.
      * */
@@ -248,10 +261,11 @@ declare module 'react-native-smart-gplaces' {
      * */
     showListLoader?: boolean;
 
-    /** Triggered when a place is tapped. Includes full details if `fetchDetails` is true, otherwise null. */
+    /** Triggered when a place is tapped. Includes full details if `fetchDetails={true}` and timezone if `fetchTimeZone={true}`. */
     onPlaceSelected?: (
       details: PlaceDetails | null,
-      prediction: PlacePrediction
+      prediction: PlacePrediction,
+      timezone: TimeZoneResult | null
     ) => void;
 
     /** If true, the prediction results list will remain visible on screen even after an item is selected or input is blurred. */
@@ -358,6 +372,13 @@ declare module 'react-native-smart-gplaces' {
     error: string | null;
     /** Function to imperatively trigger a Place Details fetch for a specific placeId. */
     fetchPlaceDetails: (placeId: string) => Promise<PlaceDetails>;
+    /** Boolean indicating if the Timezone API is currently fetching. */
+    fetchingTimeZone: boolean;
+    /** Function to imperatively trigger a Timezone fetch for specific coordinates. */
+    fetchPlaceTimeZone: (
+      latitude: number,
+      longitude: number
+    ) => Promise<TimeZoneResult>;
     /** Instantly clears the results array. */
     clearResults: () => void;
     /** Forces the generation of a new Google UUID Session Token for billing. */

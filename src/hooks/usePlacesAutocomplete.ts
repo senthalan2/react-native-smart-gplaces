@@ -3,6 +3,7 @@ import {
   type PlacePrediction,
   type PlacesHookOptions,
   type PlaceDetails,
+  type TimeZoneResult,
   type UsePlacesAutocompleteReturn,
 } from '../types';
 import {
@@ -10,6 +11,7 @@ import {
   fetchLegacyDetails,
 } from '../api/placesLegacyApi';
 import { fetchNewAutocomplete, fetchNewDetails } from '../api/placesNewApi';
+import { fetchTimeZone as fetchTimeZoneApi } from '../api/timezoneApi';
 import { useDebounce } from '../utils/debounce';
 import { generateSessionToken } from '../utils/sessionToken';
 import { Cache } from '../utils/cache';
@@ -31,6 +33,7 @@ export const usePlacesAutocomplete = (
   const [results, setResults] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingDetails, setFetchingDetails] = useState(false);
+  const [fetchingTimeZone, setFetchingTimeZone] = useState(false);
 
   // 🔥 NEW: Tracks the exact moment between a keystroke and the debounced API firing
   const [isTyping, setIsTyping] = useState(false);
@@ -38,7 +41,14 @@ export const usePlacesAutocomplete = (
 
   const sessionTokenRef = useRef(generateSessionToken());
   const abortControllerRef = useRef<AbortController | null>(null);
+  const timezoneAbortControllerRef = useRef<AbortController | null>(null);
   const skipSearchRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      timezoneAbortControllerRef.current?.abort();
+    };
+  }, []);
 
   // Custom setter to safely control text without firing API calls unnecessarily
   const setQuery = useCallback((text: string, skipSearch = false) => {
@@ -167,15 +177,57 @@ export const usePlacesAutocomplete = (
     }
   };
 
+  const fetchPlaceTimeZone = async (
+    latitude: number,
+    longitude: number
+  ): Promise<TimeZoneResult> => {
+    const currentOptions = optionsRef.current;
+
+    // Cancel any in-flight timezone request for this hook instance
+    timezoneAbortControllerRef.current?.abort();
+    timezoneAbortControllerRef.current = new AbortController();
+
+    setFetchingTimeZone(true);
+    if (currentOptions.onStartFetchingTimeZone)
+      currentOptions.onStartFetchingTimeZone();
+
+    try {
+      const result = await fetchTimeZoneApi(
+        latitude,
+        longitude,
+        {
+          apiKey: currentOptions.apiKey,
+          // Fall back to the general language prop if no timezone-specific one is set
+          language: currentOptions.timezoneLanguage ?? currentOptions.language,
+          proxyUrl: currentOptions.timezoneProxyUrl,
+          enableCache: currentOptions.enableTimezoneCache,
+        },
+        timezoneAbortControllerRef.current.signal
+      );
+      return result;
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        const errMsg = err.message || 'Error fetching timezone';
+        if (currentOptions.onErrorFetchingTimeZone)
+          currentOptions.onErrorFetchingTimeZone(errMsg);
+      }
+      throw err;
+    } finally {
+      setFetchingTimeZone(false);
+    }
+  };
+
   return {
     query,
     setQuery,
     results,
     loading,
     fetchingDetails,
+    fetchingTimeZone,
     isTyping,
     error,
     fetchPlaceDetails,
+    fetchPlaceTimeZone,
     clearResults: () => updateResults([]),
     resetSession,
     getSessionToken: () => sessionTokenRef.current,

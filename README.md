@@ -71,7 +71,44 @@ export default function App() {
 
 ## 🎨 Advanced Customization Examples
 
-### 1. Advanced Google API Filters
+### 1. Fetching Timezone Alongside Place Details
+
+Enable `fetchTimeZone` alongside `fetchDetails` to receive all three — details, timezone, and prediction — in a single `onPlaceSelected` callback. The timezone is fetched automatically after coordinates are resolved and cached in-memory so repeated selections of the same place are free.
+
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_GOOGLE_API_KEY"
+  fetchDetails={true}
+  fetchTimeZone={true}
+  onPlaceSelected={(details, prediction, timezone) => {
+    console.log('Address:', details?.address);
+    console.log('Timezone ID:', timezone?.timeZoneId);   // "America/New_York"
+    console.log('UTC Offset:', timezone?.utcOffset);      // -14400 (seconds)
+  }}
+/>
+```
+
+To observe timezone loading state or handle errors independently:
+
+```tsx
+<GooglePlacesAutocomplete
+  apiKey="YOUR_GOOGLE_API_KEY"
+  fetchDetails={true}
+  fetchTimeZone={true}
+  timezoneLanguage="fr"                // Timezone name returned in French
+  showLoaderDuringTimeZoneFetch={true} // Spinner stays on during timezone fetch
+  onStartFetchingTimeZone={() => console.log('Fetching timezone...')}
+  onErrorFetchingTimeZone={(err) => console.warn('Timezone error:', err)}
+  onPlaceSelected={(details, prediction, timezone) => {
+    // timezone is null if the fetch failed or coordinates were unavailable
+    if (timezone) {
+      console.log(timezone.timeZoneName); // e.g. "heure normale de l'Est"
+    }
+  }}
+/>
+```
+
+### 2. Advanced Google API Filters
 Limit results to specific countries and calculate the exact distance from the user natively!
 
 ```tsx
@@ -91,7 +128,7 @@ Limit results to specific countries and calculate the exact distance from the us
 />
 ```
 
-### 2. "Use Current Location" Button (Custom Header)
+### 3. "Use Current Location" Button (Custom Header)
 By using `renderHeaderComponent` along with `headerComponentPlacement="outsideList"`, you can permanently place a static button directly beneath the search input, unaffected by whether the search results list is open or closed.
 
 ```tsx
@@ -106,7 +143,7 @@ By using `renderHeaderComponent` along with `headerComponentPlacement="outsideLi
 />
 ```
 
-### 3. Custom Item Render (Safe Touch Delegation)
+### 4. Custom Item Render (Safe Touch Delegation)
 When using `renderItem`, we pass an `onSelect` callback. Bind this to your own `Pressable` or `TouchableOpacity` to seamlessly trigger the internal detail-fetching loop!
 
 ```tsx
@@ -121,7 +158,7 @@ When using `renderItem`, we pass an `onSelect` callback. Bind this to your own `
 />
 ```
 
-### 4. Complete Style Override (Blank Slate)
+### 5. Complete Style Override (Blank Slate)
 Don't want to fight default paddings or border radii? Pass `disableDefaultStyles={true}` to wipe all internal styling and build your component from scratch.
 
 ```tsx
@@ -134,7 +171,7 @@ Don't want to fight default paddings or border radii? Pass `disableDefaultStyles
 />
 ```
 
-### 5. Dynamic Empty State (Using State Props)
+### 6. Dynamic Empty State (Using State Props)
 Because `renderEmptyComponent` and `renderHeaderComponent` receive the current state, you can show dynamic messages like "Type at least 3 characters..." or "No results for 'XYZ'".
 
 ```tsx
@@ -177,12 +214,16 @@ Gain total imperative control over the search bar by attaching a `ref` to the co
 | `apiKey` | `string` | **Required** | Your Google Maps API Key. |
 | `isNewPlaces` | `boolean` | `true` | Use New Places API v1 (`true`) or Legacy API (`false`). |
 | `fetchDetails` | `boolean` | `false` | Automatically fetches coordinates and full details when an item is tapped. |
+| `fetchTimeZone` | `boolean` | `false` | Fetches the timezone for the selected place after details are resolved. Requires `fetchDetails={true}`. |
 | `detailsFields`| `string \| string[]`| *Auto* | Exact fields to fetch during Place Details to reduce API costs (e.g. `['id', 'location']`). |
 | `debounce` | `number` | `400` | Milliseconds to wait after the user stops typing before calling the API. |
 | `minLength` | `number` | `2` | Minimum characters needed to trigger a search request. |
 | `enableCache` | `boolean` | `true` | Caches results in-memory to prevent duplicate network calls. |
 | `autocompleteProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Autocomplete API. |
 | `detailsProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Details API. |
+| `timezoneProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Timezone API. |
+| `timezoneLanguage` | `string` | `language` | Language for the timezone name. Falls back to the `language` prop if unset. |
+| `enableTimezoneCache` | `boolean` | `true` | Cache timezone results in-memory. Subsequent calls for the same coordinates return instantly. |
 
 ### 🌍 Google Advanced Features (Unified for Both APIs)
 This package intelligently maps the following props to the correct URL variables depending on whether `isNewPlaces` is true or false.
@@ -217,6 +258,7 @@ These props are solely passed when `isNewPlaces={false}`.
 | `showClearButton`| `boolean` | `true` | Displays the clear (✕) button inside the input when text is present. |
 | `setQueryOnSelect`| `boolean` | `true` | Auto-updates the text input with the selected place's description. |
 | `showLoaderDuringDetailsFetch`| `boolean`| `true` | Shows the input loader visually while `fetchDetails` is running. |
+| `showLoaderDuringTimeZoneFetch`| `boolean`| `true` | Shows the input loader visually while `fetchTimeZone` is running. |
 | `renderListInitially`| `boolean` | `false` | Shows the empty list or cached results immediately on component mount. |
 | `keepResultsAfterBlur`| `boolean` | `false` | Prediction list remains visible on screen even after the TextInput loses focus. |
 | `blurOnSelect`| `boolean` | `true` | TextInput loses focus when a prediction item is selected. |
@@ -242,7 +284,7 @@ Replace any piece of the UI with your own components.
 ### ⚡ Lifecycle Events
 | Prop | Signature | Description |
 |---|---|---|
-| `onPlaceSelected` | `(details: PlaceDetails \| null, prediction: PlacePrediction) => void` | Triggered when a place is tapped. Includes full details if `fetchDetails={true}`. |
+| `onPlaceSelected` | `(details, prediction, timezone) => void` | Triggered when a place is tapped. `details` is populated if `fetchDetails={true}`, `timezone` if `fetchTimeZone={true}`. |
 | `onLoaderStart` | `() => void` | Triggered exactly when the search network request begins. |
 | `onLoaderEnd` | `() => void` | Triggered when the search network request finishes. |
 | `onDataLoaded` | `(data: PlacePrediction[]) => void` | Triggered when autocomplete data is successfully loaded. |
@@ -250,6 +292,8 @@ Replace any piece of the UI with your own components.
 | `onError` | `(error: string) => void` | Triggered when an error occurs during autocomplete search. |
 | `onStartFetchingDetails`| `(placeId: string) => void`| Triggered when starting to fetch full place details. |
 | `onErrorFetchingDetails`| `(error: string) => void`| Triggered if an error occurs while fetching full place details. |
+| `onStartFetchingTimeZone`| `() => void`| Triggered when starting to fetch timezone for the selected place. |
+| `onErrorFetchingTimeZone`| `(error: string) => void`| Triggered if an error occurs while fetching timezone. |
 
 ### 💅 Styling & Escape Hatches
 | Prop | Type | Description |
@@ -329,8 +373,10 @@ const {
   results, 
   loading, 
   fetchingDetails,
+  fetchingTimeZone,
   error, 
-  fetchPlaceDetails, 
+  fetchPlaceDetails,
+  fetchPlaceTimeZone,
   clearResults,
   resetSession 
 } = usePlacesAutocomplete({ apiKey: 'YOUR_API_KEY', isNewPlaces: true });

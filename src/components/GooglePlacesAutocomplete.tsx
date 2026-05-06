@@ -21,6 +21,7 @@ import {
   type DisableDefaultStyles,
   type GooglePlacesAutocompleteRef,
   type TextInputFocusEvent,
+  type TimeZoneResult,
 } from '../types';
 
 export const GooglePlacesAutocomplete = forwardRef<
@@ -55,6 +56,7 @@ export const GooglePlacesAutocomplete = forwardRef<
     renderClearButton,
 
     fetchDetails = false,
+    fetchTimeZone = false,
     onPlaceSelected,
     keepResultsAfterBlur = false,
     keyboardShouldPersistTaps = 'handled',
@@ -67,6 +69,7 @@ export const GooglePlacesAutocomplete = forwardRef<
     setQueryOnSelect = true,
     blurOnSelect = true,
     showLoaderDuringDetailsFetch = true,
+    showLoaderDuringTimeZoneFetch = true,
     showEmptyComponent = true,
     showSeparator = true,
     showListLoader = true,
@@ -90,9 +93,11 @@ export const GooglePlacesAutocomplete = forwardRef<
     results,
     loading,
     fetchingDetails,
+    fetchingTimeZone,
     isTyping,
     error,
     fetchPlaceDetails,
+    fetchPlaceTimeZone,
     clearResults,
     getSessionToken,
   } = usePlacesAutocomplete(hookOptions);
@@ -177,7 +182,7 @@ export const GooglePlacesAutocomplete = forwardRef<
   const handleSelect = async (item: PlacePrediction) => {
     if (blurTimeout.current) clearTimeout(blurTimeout.current);
 
-    // 🔥 Skip API search when simply setting text from a selection
+    // Skip API search when simply setting text from a selection
     if (setQueryOnSelect) setQuery(item.description, true);
 
     if (!keepResultsAfterBlur && blurOnSelect) {
@@ -186,16 +191,41 @@ export const GooglePlacesAutocomplete = forwardRef<
     }
     if (blurOnSelect) textInputRef.current?.blur();
 
-    if (fetchDetails && onPlaceSelected) {
-      try {
-        const details = await fetchPlaceDetails(item.placeId);
-        onPlaceSelected(details, item);
-      } catch (error) {
-        onPlaceSelected(null, item);
-      }
-    } else if (onPlaceSelected) {
-      onPlaceSelected(null, item);
+    if (!onPlaceSelected) return;
+
+    // No details requested — notify immediately with nulls
+    if (!fetchDetails) {
+      onPlaceSelected(null, item, null);
+      return;
     }
+
+    let details;
+    try {
+      details = await fetchPlaceDetails(item.placeId);
+    } catch (err: unknown) {
+      // Suppress AbortError — a newer selection is already in flight
+      if ((err as { name?: string })?.name !== 'AbortError') {
+        onPlaceSelected(null, item, null);
+      }
+      return;
+    }
+
+    // No timezone requested, or coordinates unavailable — notify with details only
+    const { latitude, longitude } = details;
+    if (!fetchTimeZone || latitude == null || longitude == null) {
+      onPlaceSelected(details, item, null);
+      return;
+    }
+
+    let timezone: TimeZoneResult | null = null;
+    try {
+      timezone = await fetchPlaceTimeZone(latitude, longitude);
+    } catch (err: unknown) {
+      // Abort means a newer selection superseded this one — stay silent
+      if ((err as { name?: string })?.name === 'AbortError') return;
+    }
+
+    onPlaceSelected(details, item, timezone);
   };
 
   const DefaultItem = ({ item }: { item: PlacePrediction }) => (
@@ -228,7 +258,9 @@ export const GooglePlacesAutocomplete = forwardRef<
   const isSearchLoadingInput =
     isSearchActive &&
     (loaderPlacement === 'input' || loaderPlacement === 'both');
-  const isDetailsLoadingInput = fetchingDetails && showLoaderDuringDetailsFetch;
+  const isDetailsLoadingInput =
+    (fetchingDetails && showLoaderDuringDetailsFetch) ||
+    (fetchingTimeZone && showLoaderDuringTimeZoneFetch);
 
   const showInputLoaderUI = isSearchLoadingInput || isDetailsLoadingInput;
   const showListLoaderUI =
