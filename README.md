@@ -377,7 +377,9 @@ import { GooglePlacesAutocomplete, fetchTimeZone } from 'react-native-smart-gpla
 />
 ```
 
-### With Request Cancellation
+### Auto-abort & External Cancellation
+
+`fetchTimeZone` automatically cancels any previous in-flight request when called again — ideal for rapid coordinate updates (e.g. map pan). You can also pass your own `AbortSignal` to cancel from outside:
 
 ```tsx
 const controller = new AbortController();
@@ -386,9 +388,10 @@ const timezone = await fetchTimeZone(51.5074, -0.1278, {
   apiKey: 'YOUR_GOOGLE_API_KEY',
   language: 'fr',           // Return timezone name in French
   timestamp: 1700000000,    // Unix timestamp for DST accuracy (defaults to now)
+  enableCache: true,        // Skip the API call if this location was already fetched
 }, controller.signal);
 
-// Cancel if needed:
+// Cancel from outside if needed (e.g. component unmount):
 controller.abort();
 ```
 
@@ -410,6 +413,7 @@ fetchTimeZone(
 | `apiKey` | `string` | **Required** | Your Google Maps API Key. Must have Timezone API enabled. |
 | `timestamp` | `number` | `Date.now() / 1000` | Unix timestamp (seconds) used to determine DST accuracy. |
 | `language` | `string` | `undefined` | Language code for the returned `timeZoneName` (e.g. `'en'`, `'fr'`). |
+| `enableCache` | `boolean` | `true` | Caches results in-memory by coordinates. Subsequent calls for the same location return instantly at zero API cost. |
 | `proxyUrl` | `string` | `undefined` | CORS bypass proxy URL for the Timezone API (useful for Expo Web). |
 
 ### `TimeZoneResult`

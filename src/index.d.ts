@@ -388,6 +388,8 @@ declare module 'react-native-smart-gplaces' {
     timestamp?: number;
     /** The language in which to return results (e.g., 'en', 'fr'). */
     language?: string;
+    /** Caches results in-memory to prevent duplicate API calls for the same coordinates. Default is true. */
+    enableCache?: boolean;
     /** CORS bypass proxy URL for the Timezone API (useful for Expo Web). */
     proxyUrl?: string;
   }
