@@ -145,6 +145,8 @@ declare module 'react-native-smart-gplaces' {
     onStartFetchingTimeZone?: () => void;
     /** Triggered if an error occurs while fetching timezone. */
     onErrorFetchingTimeZone?: (error: string) => void;
+    /** Optional separate API key exclusively for the Timezone API. Falls back to the main `apiKey` if not provided. */
+    timezoneApiKey?: string;
     /** Language code for the timezone name (e.g., 'en', 'fr'). Falls back to the `language` prop if not set. */
     timezoneLanguage?: string;
     /** CORS bypass proxy URL for the Timezone API (useful for Expo Web). */

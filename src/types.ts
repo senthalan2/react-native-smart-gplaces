@@ -143,6 +143,8 @@ export interface PlacesHookOptions {
   onStartFetchingTimeZone?: () => void;
   /** Triggered if an error occurs while fetching timezone. */
   onErrorFetchingTimeZone?: (error: string) => void;
+  /** Optional separate API key exclusively for the Timezone API. Falls back to the main `apiKey` if not provided. */
+  timezoneApiKey?: string;
   /** Language code for the timezone name (e.g., 'en', 'fr'). Falls back to the `language` prop if not set. */
   timezoneLanguage?: string;
   /** CORS bypass proxy URL for the Timezone API (useful for Expo Web). */
@@ -373,7 +375,10 @@ export interface UsePlacesAutocompleteReturn {
   /** Boolean indicating if the Timezone API is currently fetching. */
   fetchingTimeZone: boolean;
   /** Function to imperatively trigger a Timezone fetch for specific coordinates. */
-  fetchPlaceTimeZone: (latitude: number, longitude: number) => Promise<TimeZoneResult>;
+  fetchPlaceTimeZone: (
+    latitude: number,
+    longitude: number
+  ) => Promise<TimeZoneResult>;
   /** Instantly clears the results array. */
   clearResults: () => void;
   /** Forces the generation of a new Google UUID Session Token for billing. */

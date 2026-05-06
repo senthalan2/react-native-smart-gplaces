@@ -196,7 +196,8 @@ export const usePlacesAutocomplete = (
         latitude,
         longitude,
         {
-          apiKey: currentOptions.apiKey,
+          // Use dedicated timezone API key if provided, otherwise fall back to the main key
+          apiKey: currentOptions.timezoneApiKey ?? currentOptions.apiKey,
           // Fall back to the general language prop if no timezone-specific one is set
           language: currentOptions.timezoneLanguage ?? currentOptions.language,
           proxyUrl: currentOptions.timezoneProxyUrl,

@@ -221,6 +221,7 @@ Gain total imperative control over the search bar by attaching a `ref` to the co
 | `enableCache` | `boolean` | `true` | Caches results in-memory to prevent duplicate network calls. |
 | `autocompleteProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Autocomplete API. |
 | `detailsProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Details API. |
+| `timezoneApiKey` | `string` | `apiKey` | Separate API key exclusively for the Timezone API. Falls back to the main `apiKey` if not set. Useful when billing is split across projects. |
 | `timezoneProxyUrl` | `string` | `undefined`| CORS bypass proxy URL for the Timezone API. |
 | `timezoneLanguage` | `string` | `language` | Language for the timezone name. Falls back to the `language` prop if unset. |
 | `enableTimezoneCache` | `boolean` | `true` | Cache timezone results in-memory. Subsequent calls for the same coordinates return instantly. |
